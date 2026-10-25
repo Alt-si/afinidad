@@ -1,0 +1,39 @@
+# Blueprint de Render: crea la base de datos y el servicio web juntos.
+# En Render: New > Blueprint > elegí este repositorio.
+databases:
+  - name: afinidad-db
+    databaseName: afinidad
+    user: afinidad
+    plan: free          # la base gratis vence a los 30 días; para uso real elegí un plan pago
+
+services:
+  - type: web
+    name: afinidad
+    runtime: node
+    plan: free          # se duerme tras 15 min sin visitas; con plan pago queda siempre activo
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: afinidad-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MATCH_THRESHOLD
+        value: "70"
+      # Correo (Brevo): se completan en el panel de Render
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # SMS (Twilio Verify): se completan en el panel de Render
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
