@@ -61,8 +61,7 @@ async function refreshMe() {
 }
 function step() {
   if (!ME) return 'auth';
-  if (!ME.email_verified) return 'email';
-  if (!ME.phone_verified) return 'phone';
+  if (!ME.email_verified && !ME.phone_verified) return 'verify';
   if (!ME.profile) return 'profile';
   return 'app';
 }
@@ -71,8 +70,7 @@ function route() {
   const s = step();
   renderHeader(s);
   if (s === 'auth') return vAuth();
-  if (s === 'email') return vEmail();
-  if (s === 'phone') return vPhone();
+  if (s === 'verify') return vVerify();
   if (s === 'profile') return vProfileForm(true);
   if (tab === 'descubrir') vDescubrir();
   else if (tab === 'invitaciones') vInvitaciones();
@@ -111,7 +109,7 @@ document.getElementById('who').addEventListener('click', async e => {
 
 /* ===== Acceso ===== */
 function steps(on) {
-  const L = [['email', 'Correo'], ['phone', 'Celular'], ['profile', 'Perfil']];
+  const L = [['verify', 'Verificación'], ['profile', 'Perfil']];
   const idx = L.findIndex(x => x[0] === on);
   return `<div class="steps" aria-label="Pasos del registro">${L.map(([k, l], i) =>
     `<span class="${i < idx ? 'done' : i === idx ? 'on' : ''}">${i + 1}. ${l}</span>`).join('')}</div>`;
@@ -129,55 +127,47 @@ function vAuth() {
       </div>
       <form id="authForm" class="stack" style="gap:14px" novalidate>
         <label class="f">Correo<input id="a-email" name="email" type="email" autocomplete="email" required><span class="err" data-e="email"></span></label>
-        <label class="f">Contraseña${login ? '' : ' <span class="hint">mínimo 8 caracteres</span>'}<input id="a-pass" name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" required><span class="err" data-e="password"></span></label>
-        ${login ? '' : `<label class="f">Celular <span class="hint">con código de país; te vamos a mandar un SMS</span><input id="a-tel" name="telefono" type="tel" autocomplete="tel" placeholder="+54 9 221 555 1234" required><span class="err" data-e="telefono"></span></label>`}
+        <label class="f">Contraseña${login ? '' : ' <span class="hint">mínimo 8 caracteres</span>'}<span class="pw"><input id="a-pass" name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" required><button type="button" data-act="toggle-pw" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button></span><span class="err" data-e="password"></span></label>
+        ${login ? '' : `<label class="f">Celular <span class="hint">con código de país</span><input id="a-tel" name="telefono" type="tel" autocomplete="tel" placeholder="+54 9 221 555 1234" required><span class="err" data-e="telefono"></span></label>`}
         <button class="btn primary" type="submit">${login ? 'Entrar' : 'Crear cuenta'}</button>
         <span class="err" data-e="general"></span>
       </form>
     </div>
-    ${login ? '' : '<p class="note">Para crear la cuenta verificamos tu correo y tu celular con un código. No pedimos documento.</p>'}
+    ${login ? '' : '<p class="note">Para activar la cuenta te mandamos un código al correo o por SMS al celular, como prefieras. No pedimos documento.</p>'}
   </section>`;
 }
 
-function vEmail() {
+let vChannel = 'email';   // dónde recibir el código: 'email' o 'sms'
+let codeSent = false;
+function vVerify() {
+  const email = vChannel === 'email';
+  const dest = email ? ME.email : ME.telefono;
   main.innerHTML = `<section class="auth">
-    ${steps('email')}
-    <div><h2>Revisá tu correo</h2><p class="sub">Te mandamos un código de 6 números a <b>${esc(ME.email)}</b>. Vence en 10 minutos.</p></div>
+    ${steps('verify')}
+    <div><h2>Verificá tu cuenta</h2><p class="sub">Elegí dónde querés recibir un código de 6 números. Vence en 10 minutos.</p></div>
     <div class="panel">
-      <form id="emailForm" class="stack" style="gap:14px" novalidate>
-        <label class="f">Código<input id="e-code" name="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
-        <button class="btn primary" type="submit">Verificar correo</button>
+      <div class="seg" role="group" aria-label="Dónde recibir el código">
+        <button type="button" data-channel="email" aria-pressed="${email}">Correo</button>
+        <button type="button" data-channel="sms" aria-pressed="${!email}">SMS al celular</button>
+      </div>
+      <p class="sub" style="margin:0">${codeSent ? 'Lo mandamos a' : 'Lo vamos a mandar a'} <b>${esc(dest)}</b>.</p>
+      ${codeSent ? `
+      <form id="codeForm" class="stack" style="gap:14px" novalidate>
+        <label class="f">Código<input id="v-code" name="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required></label>
+        <button class="btn primary" type="submit">Verificar</button>
         <span class="err" data-e="general"></span>
       </form>
-      <p class="note">¿No llegó? Mirá en spam o <button class="link" data-act="resend-email">mandalo de nuevo</button>.</p>
-    </div>
-    ${CFG.devCodes ? '<p class="notice">Modo prueba: el servidor no tiene configurado el envío real, el código aparece en el log del servidor.</p>' : ''}
-  </section>`;
-}
-
-let smsSent = false;
-function vPhone() {
-  main.innerHTML = `<section class="auth">
-    ${steps('phone')}
-    <div><h2>Verificá tu celular</h2><p class="sub">Vamos a mandar un SMS con un código al <b>${esc(ME.telefono)}</b>. Así confirmamos que sos una persona real.</p></div>
-    <div class="panel">
-      ${smsSent ? `
-      <form id="smsForm" class="stack" style="gap:14px" novalidate>
-        <label class="f">Código del SMS<input id="s-code" name="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required></label>
-        <button class="btn primary" type="submit">Verificar celular</button>
-        <span class="err" data-e="general"></span>
-      </form>
-      <p class="note">¿No llegó? <button class="link" data-act="send-sms">Mandar otro SMS</button></p>`
-      : `<button class="btn primary" data-act="send-sms">Enviarme el SMS</button><span class="err" id="smsErr"></span>`}
-      <details><summary>Cambiar el número</summary>
+      <p class="note">¿No llegó? ${email ? 'Mirá en la carpeta de spam, ' : ''}<button class="link" data-act="send-code">mandalo de nuevo</button> o <button class="link" data-channel="${email ? 'sms' : 'email'}">probá ${email ? 'por SMS' : 'por correo'}</button>.</p>`
+      : `<button class="btn primary" data-act="send-code">Enviarme el código</button><span class="err" id="sendErr"></span>`}
+      ${email ? '' : `<details><summary>Cambiar el número</summary>
         <form id="phoneForm" class="inline-form" style="margin-top:10px" novalidate>
           <label for="p-tel" hidden>Nuevo celular</label>
           <input id="p-tel" type="tel" autocomplete="tel" placeholder="+54 9 221 555 1234">
           <button class="btn" type="submit">Guardar número</button>
         </form>
-      </details>
+      </details>`}
     </div>
-    ${CFG.devCodes ? '<p class="notice">Modo prueba: el servidor no tiene configurado el envío real, el código aparece en el log del servidor.</p>' : ''}
+    ${CFG.devCodes ? '<p class="notice">Modo prueba: el servidor todavía no tiene configurado el envío real de correos o SMS. El código aparece en los Logs del servicio en Render.</p>' : ''}
   </section>`;
 }
 
@@ -368,11 +358,24 @@ main.addEventListener('click', async e => {
     if (t.dataset.mode) { authMode = t.dataset.mode; return vAuth(); }
     if (act === 'retry') return route();
     if (act === 'cancel') { inviting = reporting = null; return tab === 'descubrir' ? drawDescubrir() : tab === 'invitaciones' ? drawInvitaciones() : route(); }
-    if (act === 'resend-email') return busy(t, async () => { await api('/auth/email/resend', { method: 'POST', body: {} }); toast('Te mandamos un código nuevo.'); });
-    if (act === 'send-sms') {
+    if (act === 'toggle-pw') {
+      const inp = t.parentElement.querySelector('input'), show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      t.textContent = show ? 'Ocultar' : 'Mostrar';
+      t.setAttribute('aria-pressed', String(show));
+      t.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      inp.focus();
+      return;
+    }
+    if (t.dataset.channel) { vChannel = t.dataset.channel; codeSent = false; return vVerify(); }
+    if (act === 'send-code') {
       return busy(t, async () => {
-        try { await api('/auth/sms/send', { method: 'POST', body: {} }); smsSent = true; vPhone(); toast('SMS enviado.'); document.getElementById('s-code')?.focus(); }
-        catch (err) { const s = document.getElementById('smsErr'); if (s) s.textContent = err.message; else toast(err.message, true); }
+        try {
+          await api(vChannel === 'email' ? '/auth/email/send' : '/auth/sms/send', { method: 'POST', body: {} });
+          codeSent = true; vVerify();
+          toast(vChannel === 'email' ? 'Te mandamos el código por correo.' : 'Te mandamos el código por SMS.');
+          document.getElementById('v-code')?.focus();
+        } catch (err) { const s = document.getElementById('sendErr'); if (s) s.textContent = err.message; else toast(err.message, true); }
       });
     }
     if (act === 'ask-delete') {
@@ -413,19 +416,15 @@ main.addEventListener('submit', async e => {
         const body = { email: f.email.value, password: f.password.value };
         if (authMode === 'signup') body.telefono = f.telefono.value;
         await api(authMode === 'signup' ? '/auth/signup' : '/auth/login', { method: 'POST', body });
-        await refreshMe(); tab = 'descubrir'; smsSent = false; return route();
+        await refreshMe(); tab = 'descubrir'; codeSent = false; vChannel = 'email'; return route();
       }
-      if (f.id === 'emailForm') {
-        await api('/auth/email/verify', { method: 'POST', body: { code: f.code.value } });
-        await refreshMe(); toast('Correo verificado.'); return route();
-      }
-      if (f.id === 'smsForm') {
-        await api('/auth/sms/verify', { method: 'POST', body: { code: f.code.value } });
-        await refreshMe(); toast('Celular verificado.'); return route();
+      if (f.id === 'codeForm') {
+        await api(vChannel === 'email' ? '/auth/email/verify' : '/auth/sms/verify', { method: 'POST', body: { code: f.code.value } });
+        await refreshMe(); codeSent = false; toast('Cuenta verificada.'); return route();
       }
       if (f.id === 'phoneForm') {
         await api('/auth/phone', { method: 'POST', body: { telefono: document.getElementById('p-tel').value } });
-        await refreshMe(); smsSent = false; toast('Número actualizado.'); return vPhone();
+        await refreshMe(); codeSent = false; toast('Número actualizado.'); return vVerify();
       }
       if (f.id === 'pf') {
         const nuevo = !ME.profile;

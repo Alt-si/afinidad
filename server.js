@@ -94,8 +94,10 @@ const auth = wrap(async (req, res, next) => {
     fail(res, 401, 'Tenés que iniciar sesión.');
   }
 });
+// Alcanza con verificar uno de los dos: el correo o el celular
+const isVerified = u => u.email_verified || u.phone_verified;
 const verified = (req, res, next) =>
-  req.user.email_verified && req.user.phone_verified ? next() : fail(res, 403, 'Primero verificá tu correo y tu celular.');
+  isVerified(req.user) ? next() : fail(res, 403, 'Primero verificá tu cuenta con el código.');
 const withProfile = wrap(async (req, res, next) => {
   req.profile = await loadProfile(req.user.id);
   if (!req.profile) return fail(res, 403, 'Primero completá tu perfil.');
@@ -155,8 +157,8 @@ app.post('/api/auth/signup', authLimiter, wrap(async (req, res) => {
   if (!PHONE_RE.test(telefono)) errors.telefono = 'Escribí el celular con código de país, por ejemplo +54 9 221 555 1234.';
   if (Object.keys(errors).length) return fail(res, 400, 'Revisá los datos.', { errors });
 
-  const existing = (await q('SELECT id,email_verified FROM users WHERE email=$1', [email])).rows[0];
-  if (existing && existing.email_verified) return fail(res, 409, 'Ya hay una cuenta con ese correo. Iniciá sesión.', { errors: { email: 'Ya hay una cuenta con ese correo.' } });
+  const existing = (await q('SELECT id,email_verified,phone_verified FROM users WHERE email=$1', [email])).rows[0];
+  if (existing && (existing.email_verified || existing.phone_verified)) return fail(res, 409, 'Ya hay una cuenta con ese correo. Iniciá sesión.', { errors: { email: 'Ya hay una cuenta con ese correo.' } });
   if (existing) await q('DELETE FROM users WHERE id=$1', [existing.id]); // registro anterior sin terminar
 
   const taken = (await q('SELECT 1 FROM users WHERE telefono=$1 AND phone_verified', [telefono])).rows[0];
@@ -164,8 +166,7 @@ app.post('/api/auth/signup', authLimiter, wrap(async (req, res) => {
 
   const hash = await bcrypt.hash(password, 11);
   const { rows } = await q('INSERT INTO users (email,password_hash,telefono) VALUES ($1,$2,$3) RETURNING id', [email, hash, telefono]);
-  const code = await issueOwnCode(rows[0].id, 'email', email);
-  await notify.sendEmailCode(email, code);
+  // El código se manda después, por correo o SMS según lo que elija la persona
   setSession(res, rows[0].id);
   res.json({ ok: true });
 }));
@@ -184,10 +185,16 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/auth/email/resend', codeLimiter, auth, wrap(async (req, res) => {
-  if (req.user.email_verified) return res.json({ ok: true });
+app.post('/api/auth/email/send', codeLimiter, auth, wrap(async (req, res) => {
+  if (isVerified(req.user)) return res.json({ ok: true });
   const code = await issueOwnCode(req.user.id, 'email', req.user.email);
-  await notify.sendEmailCode(req.user.email, code);
+  try {
+    await notify.sendEmailCode(req.user.email, code);
+  } catch (e) {
+    console.error('Fallo el envío de correo:', e.message);
+    await q(`DELETE FROM verif_codes WHERE user_id=$1 AND tipo='email' AND NOT used`, [req.user.id]);
+    return fail(res, 502, 'No pudimos enviar el correo. Probá con el SMS al celular o intentá de nuevo en un rato.');
+  }
   res.json({ ok: true });
 }));
 
@@ -208,13 +215,17 @@ app.post('/api/auth/phone', auth, wrap(async (req, res) => {
 }));
 
 app.post('/api/auth/sms/send', codeLimiter, auth, wrap(async (req, res) => {
-  if (!req.user.email_verified) return fail(res, 403, 'Primero verificá tu correo.');
-  if (req.user.phone_verified) return res.json({ ok: true });
+  if (isVerified(req.user)) return res.json({ ok: true });
   const tel = req.user.telefono;
   const taken = (await q('SELECT 1 FROM users WHERE telefono=$1 AND phone_verified AND id<>$2', [tel, req.user.id])).rows[0];
   if (taken) return fail(res, 409, 'Ese celular ya está verificado en otra cuenta.');
-  if (notify.smsViaTwilio) await notify.twilioStart(tel);
-  else notify.logSmsCode(tel, await issueOwnCode(req.user.id, 'sms', tel));
+  try {
+    if (notify.smsViaTwilio) await notify.twilioStart(tel);
+    else notify.logSmsCode(tel, await issueOwnCode(req.user.id, 'sms', tel));
+  } catch (e) {
+    console.error('Fallo el envío de SMS:', e.message);
+    return fail(res, 502, 'No pudimos enviar el SMS. Revisá el número o probá con el correo.');
+  }
   res.json({ ok: true });
 }));
 
@@ -300,7 +311,7 @@ app.put('/api/profile', auth, verified, wrap(async (req, res) => {
 async function candidates(me) {
   const { rows } = await q(
     `SELECT p.* FROM profiles p JOIN users u ON u.id=p.user_id
-     WHERE u.email_verified AND u.phone_verified AND p.user_id<>$1
+     WHERE (u.email_verified OR u.phone_verified) AND p.user_id<>$1
        AND p.genero = ANY($2) AND $3 = ANY(p.interes)
        AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id=$1 AND b.blocked_id=p.user_id) OR (b.blocker_id=p.user_id AND b.blocked_id=$1))`,
     [me.user_id, me.interes, me.genero]);

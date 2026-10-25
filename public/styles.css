@@ -138,3 +138,9 @@ label.f input,label.f select,label.f textarea{font-weight:400;font-size:15px;bor
 @media (max-width:440px){nav button{padding:10px 8px;font-size:14px}}
 @media (max-width:620px){.chatwrap{grid-template-columns:1fr}.threads{flex-direction:row;overflow-x:auto}.threads button{flex:0 0 auto;max-width:200px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* contraseña con botón Mostrar / Ocultar */
+.pw{position:relative;display:block}
+label.f .pw input{padding-right:88px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--accent);font-weight:600;font-size:13px;padding:6px 10px;cursor:pointer;border-radius:6px}
+.pw button:hover{background:var(--accent-soft)}

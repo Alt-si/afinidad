@@ -5,8 +5,9 @@ App para conocer gente por afinidad en la vida cotidiana y la convivencia. Cada 
 ## Qué incluye
 
 - Registro con correo, contraseña y celular.
-- Verificación con código al correo (Brevo) y código por SMS (Twilio Verify). Sin documento.
+- Verificación con un código: cada persona elige recibirlo por correo (Brevo) o por SMS al celular (Twilio Verify). Alcanza con uno de los dos. Sin documento.
 - Un celular verificado sirve para una sola cuenta.
+- Botón para mostrar u ocultar la contraseña.
 - Perfil con datos básicos, orientación, rango de edad buscado y 10 preguntas de convivencia.
 - Coincidencias desde el 70 %, con tabla comparativa de respuestas.
 - Invitaciones a chatear: quien recibe ve el perfil y acepta o rechaza. El rechazo no se avisa.
