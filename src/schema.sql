@@ -77,3 +77,6 @@ CREATE TABLE IF NOT EXISTS reports (
   motivo      TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Marca los perfiles de prueba (se crean con DEMO_PASSWORD y se borran con DEMO_REMOVE)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS es_prueba BOOLEAN NOT NULL DEFAULT FALSE;

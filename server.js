@@ -12,6 +12,7 @@ const { q, migrate } = require('./src/db');
 const { QUESTIONS, GENEROS, UMBRAL } = require('./src/questions');
 const { edad, compatibles, puntaje, detalle } = require('./src/match');
 const notify = require('./src/notify');
+const { seed } = require('./src/seed');
 
 const PROD = process.env.NODE_ENV === 'production';
 const SECRET = process.env.JWT_SECRET;
@@ -78,7 +79,7 @@ async function loadProfile(id) {
 
 // Perfil tal como lo ve otra persona: sin email ni teléfono
 function publicProfile(p) {
-  return { id: p.user_id, nombre: p.nombre, edad: edad(p.nac), ciudad: p.ciudad, genero: p.genero, bio: p.bio, ans: p.ans };
+  return { id: p.user_id, nombre: p.nombre, edad: edad(p.nac), ciudad: p.ciudad, genero: p.genero, bio: p.bio, ans: p.ans, prueba: !!p.es_prueba };
 }
 
 /* ---------- middlewares de sesión ---------- */
@@ -452,5 +453,6 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 3000;
 migrate()
+  .then(seed)
   .then(() => app.listen(PORT, () => console.log(`Afinidad escuchando en el puerto ${PORT}`)))
   .catch(e => { console.error('No se pudo preparar la base de datos:', e); process.exit(1); });

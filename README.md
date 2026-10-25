@@ -62,6 +62,20 @@ npm run dev
 
 Abrí http://localhost:3000. Si no completás Brevo y Twilio, los códigos aparecen en la consola donde corre el servidor (`[DEV] Código ...`), así podés probar el registro completo sin gastar.
 
+
+## Cuentas para probar
+
+Al arrancar, el servidor puede crear cuentas ya verificadas. Se configuran en Render → servicio **afinidad** → **Environment**:
+
+| Variable | Qué hace |
+|---|---|
+| `OWNER_EMAIL` | Tu correo. Se crea tu cuenta ya verificada. |
+| `OWNER_PASSWORD` | Tu contraseña para entrar. |
+| `DEMO_PASSWORD` | Crea 10 perfiles de prueba (`prueba01@afinidad.test` a `prueba10@afinidad.test`), todos con esta contraseña. |
+| `DEMO_REMOVE` | Poné `true` para borrar los perfiles de prueba y sus chats. |
+
+Los perfiles de prueba aparecen marcados como "perfil de prueba". Las contraseñas no se guardan en el código.
+
 ## Cambiar las preguntas o el porcentaje
 
 - Las preguntas están en `src/questions.js`. El formulario y el cálculo se arman solos a partir de esa lista. Si cambiás opciones de una pregunta existente, quienes ya respondieron van a tener que actualizar su perfil.

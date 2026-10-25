@@ -239,7 +239,7 @@ function cardHTML(o, extra) {
   return `<article class="card">
     ${ring(o.puntaje)}
     <div class="body">
-      <div><h3>${esc(o.nombre)}, ${o.edad}</h3><div class="meta">${esc(o.ciudad)} · ${esc(o.genero)}</div></div>
+      <div><h3>${esc(o.nombre)}, ${o.edad}</h3><div class="meta">${esc(o.ciudad)} · ${esc(o.genero)}${o.prueba ? ' · perfil de prueba' : ''}</div></div>
       ${o.bio ? `<div>${esc(o.bio)}</div>` : ''}
       <div class="tags">${comunes.map(c => `<span class="tag">${esc(c)}</span>`).join('')}${choques.map(c => `<span class="tag no">Difieren: ${esc(c)}</span>`).join('')}</div>
     </div>
