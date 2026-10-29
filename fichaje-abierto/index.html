@@ -100,7 +100,7 @@ textarea{resize:vertical;min-height:90px}
 
 /* Mi ficha */
 .edit{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
-@media (max-width:900px){.edit{grid-template-columns:1fr}.preview-col{order:-1;max-width:300px}}
+@media (max-width:900px){.edit{grid-template-columns:1fr;gap:16px}.edit>.preview-col{order:-1;position:static;display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 14px;align-items:start}.preview-col>.lbl{grid-column:1/-1}.preview-col #full-prev{align-self:end;justify-self:start}.preview-col .pname{font-size:18px}.preview-col .pbody{padding:8px 10px 10px}.preview-col .pmeta,.preview-col .status{font-size:12px}.preview-col .specs{display:none}.preview-col .dorsal{font-size:30px}.preview-col .pos{font-size:12px;top:8px;right:6px}}
 .preview-col{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px}
 .preview-col .lbl{margin-bottom:2px}
 .sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 20px;margin-bottom:16px}
@@ -125,7 +125,7 @@ textarea{resize:vertical;min-height:90px}
 .vitem input{background:var(--surface)}
 .addv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
 .note{font-size:13px;color:var(--muted);margin:8px 0 0}
-.savebar{position:sticky;bottom:0;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.savebar{position:sticky;bottom:0;z-index:5;background:var(--bg);box-shadow:0 -6px 12px -8px rgba(0,0,0,.25);border-top:1px solid var(--line);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .savebar .msg{font-size:14px;color:var(--muted);flex:1;min-width:160px}
 .savebar .msg.ok{color:var(--ok)} .savebar .msg.bad{color:var(--bad)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
