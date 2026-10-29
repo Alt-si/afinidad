@@ -225,6 +225,36 @@ dialog::backdrop{background:rgba(5,10,20,.7)}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
 @media (max-width:700px){.two{grid-template-columns:1fr}}
 .loading{color:var(--muted);padding:20px 0}
+/* Novedades */
+.news{margin-bottom:20px}
+.news-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.news-head h2{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.02em}
+.news-head p{margin:0;color:var(--muted);font-size:14px}
+.news-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
+.ncard{scroll-snap-align:start;appearance:none;text-align:left;border:0;background:var(--band);color:var(--on-band);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:60px minmax(0,1fr);gap:12px;align-items:center;position:relative;overflow:hidden}
+button.ncard{cursor:pointer}
+.ncard::after{content:"";position:absolute;inset:0 0 0 auto;width:45%;pointer-events:none;background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.05) 14px 28px)}
+.ncard>*{position:relative;z-index:1;min-width:0}
+.nph{width:60px;height:60px;border-radius:4px;background:var(--band-2);overflow:hidden;display:grid;place-items:center;font-family:var(--f-display);font-style:italic;font-weight:900;font-size:24px;color:var(--on-band-dim)}
+.nph img{width:100%;height:100%;object-fit:cover}
+.ndate{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.nname{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:20px;line-height:1.05;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nclub{font-size:14px;color:var(--on-band-dim)}
+.nclub b{color:var(--on-band)}
+.nconf{font-size:12px;font-weight:600;color:var(--on-band-dim);margin-top:2px}
+.nconf.ok{color:#6fd39a}
+.nconf.ok::before{content:"✓ "}
+.st-fichado{color:var(--accent)}
+.fbanner{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;padding:12px 14px;border-radius:var(--r);background:var(--accent-soft);border:1px solid var(--accent)}
+.fbanner b{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:20px;text-transform:uppercase}
+.vok{color:var(--ok);font-weight:600;font-size:14px}
+.vpend{color:var(--muted);font-size:14px}
+.linkbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.linkbox code{font-family:var(--f-display);font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 8px;flex:1;min-width:0;word-break:break-all;user-select:all}
+.radios{display:flex;flex-direction:column;gap:4px;margin:4px 0 12px}
+.radios label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.radios input{margin-top:4px;accent-color:var(--accent)}
+.confbox{max-width:620px;margin:0 auto}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -246,6 +276,7 @@ dialog::backdrop{background:rgba(5,10,20,.7)}
 <main>
   <div class="wrap">
     <section id="view-explorar" aria-labelledby="tab-explorar">
+      <section class="news" id="news" hidden aria-labelledby="news-title"></section>
       <div class="sportbar" id="sportbar" role="group" aria-label="Deporte"></div>
       <div class="filters">
         <label class="fld f-q"><span class="lbl">Buscar</span><input type="text" id="f-q" placeholder="Nombre, ciudad, club…"></label>
@@ -258,6 +289,10 @@ dialog::backdrop{background:rgba(5,10,20,.7)}
       </div>
       <div class="resbar"><div class="count" id="count">Cargando fichas…</div></div>
       <div id="grid"></div>
+    </section>
+
+    <section id="view-confirmar" hidden aria-label="Confirmar un fichaje">
+      <div id="confbox" class="confbox"></div>
     </section>
 
     <section id="view-mi-ficha" aria-labelledby="tab-mi-ficha" hidden>
@@ -327,7 +362,14 @@ const natName = v => ISO.has(v) ? cName(v) : String(v || "");
 const natCode = v => { if (ISO.has(v)) return v; const t = String(v || "").trim().toLowerCase(); const hit = COUNTRIES.find(([,n]) => n.toLowerCase() === t); return hit ? hit[0] : ""; };
 const placeOf = p => { const c = paisOf(p); const parts = [p.ciudad, p.provincia === "Fuera de Argentina" ? "" : p.provincia].filter(Boolean); if (c && c !== "AR") parts.push(cName(c)); return parts.length ? (c ? flag(c) + " " : "") + parts.join(", ") : ""; };
 
-const DISP = {libre:"Libre ahora", abierto:"Con club · escucha ofertas", prueba:"Disponible para pruebas"};
+const DISP = {libre:"Libre ahora", abierto:"Con club · escucha ofertas", prueba:"Disponible para pruebas", fichado:"Fichado"};
+const TIPOS = {fichaje:"Fichaje", prestamo:"Préstamo", prueba:"Quedó a prueba"};
+const VERBO = {fichaje:"firmó con", prestamo:"llega a préstamo a", prueba:"quedó a prueba en"};
+const hasFichaje = p => !!(p && p.fichaje && p.fichaje.club && p.fichaje.fecha);
+const fmtD = d => { try { return new Date(String(d) + "T12:00:00").toLocaleDateString("es-AR", {day:"numeric", month:"short", year:"numeric"}); } catch { return String(d); } };
+const today = () => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const hex = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,"0")).join("");
+const baseUrl = () => location.href.split("#")[0];
 const MAX_VIDEOS = 6;
 
 const $ = s => document.querySelector(s);
@@ -384,18 +426,20 @@ function topBars(){
 const EJ = {foto:"", videos:[], contacto:{telefono:"",email:"",instagram:""}, publicado:true, bio:"Jugador de ejemplo para probar la app."};
 const EJEMPLOS = [
   Object.assign({}, EJ, {deporte:"futbol", nombre:"Matías Correa (ejemplo)", apodo:"Mati", fechaNac:"2001-04-12", nacionalidad:"AR", pais:"AR", ciudad:"9 de Julio", provincia:"Buenos Aires", dorsal:9, posicion:"DC", posSec:["EI"], lado:"derecho", altura:181, peso:77, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:24, goles:17, asistencias:5, vallas:1}, trayectoria:[{club:"Club Atlético Ejemplo", categoria:"Liga regional", desde:2022, hasta:2025, logros:"Goleador del Apertura"}], cualidades:["Definición","Juego aéreo","Velocidad"], videos:[{tipo:"link", url:"https://www.youtube.com/", titulo:"Goles 2025 (link de ejemplo)"}]}),
-  Object.assign({}, EJ, {deporte:"futbol", nombre:"Lucas Benítez (ejemplo)", fechaNac:"1998-09-03", nacionalidad:"AR", pais:"AR", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], lado:"derecho", altura:189, peso:84, clubActual:"Sportivo Ejemplo", disponibilidad:"abierto", temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"]}),
+  Object.assign({}, EJ, {deporte:"futbol", nombre:"Lucas Benítez (ejemplo)", fechaNac:"1998-09-03", nacionalidad:"AR", pais:"AR", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], lado:"derecho", altura:189, peso:84, clubActual:"Deportivo Ejemplo", disponibilidad:"fichado", fichaje:{club:"Deportivo Ejemplo", fecha:"2026-10-27", tipo:"fichaje", token:"0".repeat(32), confirmado:true, confirmadoPor:"Comisión directiva (ejemplo)", anunciado:Date.now()}, temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"]}),
   Object.assign({}, EJ, {deporte:"futbol", nombre:"Tomás Ríos (ejemplo)", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"AR", nacionalidad2:"IT", pasaporteUE:true, pais:"AR", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], lado:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"]}),
   Object.assign({}, EJ, {deporte:"basquet", nombre:"Nicolás Ferreyra (ejemplo)", apodo:"Nico", fechaNac:"2000-06-30", nacionalidad:"AR", pais:"AR", ciudad:"Bahía Blanca", provincia:"Buenos Aires", dorsal:7, posicion:"BAS", posSec:["ESC"], lado:"derecho", altura:184, peso:80, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:22, goles:14.5, asistencias:6, vallas:3}, trayectoria:[{club:"Club Ejemplo Básquet", categoria:"Federación provincial", desde:2019, hasta:2025, logros:"Subcampeón provincial"}], cualidades:["Pase","Tiro exterior","Liderazgo"], bio:"Jugador de ejemplo. Promedios por partido."})
 ];
 
 /* ---------- rutas ---------- */
 function route(){
-  const v = location.hash === "#mi-ficha" ? "mi-ficha" : "explorar";
+  const h = location.hash;
+  const v = h === "#mi-ficha" ? "mi-ficha" : /^#confirmar-[a-f0-9]{32}$/.test(h) ? "confirmar" : "explorar";
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   $("#view-explorar").hidden = v !== "explorar";
   $("#view-mi-ficha").hidden = v !== "mi-ficha";
-  if (v === "mi-ficha") renderMine(); else { syncSportFilters(); renderGrid(); }
+  $("#view-confirmar").hidden = v !== "confirmar";
+  if (v === "mi-ficha") renderMine(); else if (v === "confirmar") renderConfirm(); else { syncSportFilters(); renderGrid(); }
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { location.hash = t.dataset.view; }));
 addEventListener("hashchange", route);
@@ -444,7 +488,7 @@ function cardHTML(p, asButton = true){
     ${photoHTML(p, true)}
     <div class="pbody">
       <div class="sporttag">${esc(placeOf(p) || "Ciudad")}</div>
-      ${DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}">${esc(DISP[p.disponibilidad])}</div>` : ""}
+      ${p.disponibilidad === "fichado" && hasFichaje(p) ? `<div class="status st-fichado">Fichado · ${esc(p.fichaje.club)}</div>` : DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}">${esc(DISP[p.disponibilidad])}</div>` : ""}
       <div class="specs">
         <div><span>Edad</span><b>${a ?? "–"}</b></div>
         <div><span>Altura</span><b>${num(p.altura) ? (p.altura/100).toFixed(2) : "–"}</b></div>
@@ -457,7 +501,7 @@ function cardHTML(p, asButton = true){
 function renderGrid(){
   const grid = $("#grid"), count = $("#count");
   if (!S.loaded){ count.textContent = "Cargando fichas…"; return; }
-  renderSportBar();
+  renderSportBar(); renderNews();
   const q = $("#f-q").value.trim().toLowerCase(), pos = $("#f-pos").value, pais = $("#f-pais").value, prov = $("#f-prov").value, lado = $("#f-lado").value, libres = $("#f-libres").checked, ue = $("#f-ue").checked;
   const all = published().filter(p => sportOf(p) === S.sport);
   const list = all.filter(p =>
@@ -479,6 +523,61 @@ $("#grid").addEventListener("click", e => {
   const b = e.target.closest(".pcard[data-id]"); if (!b) return;
   const p = S.players.find(x => x._id === b.dataset.id); if (p) openDetail(p);
 });
+
+/* ---------- novedades ---------- */
+function renderNews(){
+  const box = $("#news");
+  const items = S.players.filter(p => p.nombre && hasFichaje(p))
+    .sort((a,b) => String(b.fichaje.fecha).localeCompare(String(a.fichaje.fecha)) || (b.fichaje.anunciado||0) - (a.fichaje.anunciado||0)).slice(0, 10);
+  if (!items.length){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="news-head"><h2 id="news-title">Últimos fichajes</h2><p>Jugadores que encontraron club a través de Fichaje Abierto.</p></div>
+    <div class="news-row">${items.map(p => {
+      const F = p.fichaje, open = p.publicado, tag = open ? "button" : "div", src = assetId(p.foto) ? blobSrc(p.foto) : "";
+      return `<${tag} class="ncard" ${open ? `type="button" data-id="${esc(p._id)}"` : ""}>
+        <div class="nph">${src ? `<img src="${esc(src)}" alt="">` : esc(initials(p.nombre))}</div>
+        <div><div class="ndate">${esc(fmtD(F.fecha))} · ${esc(SP(p).nombre)}</div>
+          <div class="nname">${esc(p.nombre)}</div>
+          <div class="nclub">${esc(VERBO[F.tipo] || VERBO.fichaje)} <b>${esc(F.club)}</b></div>
+          <div class="nconf${F.confirmado ? " ok" : ""}">${F.confirmado ? "Confirmado por el club" : "Pendiente de confirmación del club"}</div></div>
+      </${tag}>`; }).join("")}</div>`;
+}
+$("#news").addEventListener("click", e => {
+  const b = e.target.closest(".ncard[data-id]"); if (!b) return;
+  const p = S.players.find(x => x._id === b.dataset.id); if (p) openDetail(p);
+});
+
+/* ---------- confirmar fichaje (lo hace el club) ---------- */
+function renderConfirm(){
+  const box = $("#confbox"), m = /^#confirmar-([a-f0-9]{32})$/.exec(location.hash);
+  if (!m) return;
+  const msg = (t, txt) => { box.innerHTML = `<div class="empty"><h2>${t}</h2><p>${txt}</p><a class="btn" href="#explorar">Ver jugadores</a></div>`; };
+  if (!S.loaded){ box.innerHTML = `<p class="loading">Cargando…</p>`; return; }
+  const p = S.players.find(x => hasFichaje(x) && x.fichaje.token === m[1]);
+  if (!p) return msg("Este link no es válido", "Puede que el jugador haya quitado el anuncio o que el link esté incompleto.");
+  const F = p.fichaje;
+  if (F.confirmado) return msg("Fichaje ya confirmado", `${esc(F.confirmadoPor || "El club")} ya confirmó este fichaje.`);
+  box.innerHTML = `<div class="sec">
+    <h2>Confirmar fichaje</h2>
+    <p class="hint">${esc(p.nombre)} anunció en Fichaje Abierto que ${esc(VERBO[F.tipo] || VERBO.fichaje)} <b>${esc(F.club)}</b> el ${esc(fmtD(F.fecha))}. Si es correcto, confirmalo para que la novedad aparezca como verificada.</p>
+    <form id="conf-form" novalidate>
+      <label class="fld" style="margin-bottom:12px"><span class="lbl">Quién confirma (nombre y cargo) *</span><input type="text" id="c-quien" maxlength="80" placeholder="Ej.: Laura Díaz, secretaria del club"></label>
+      <label class="chk" style="margin-bottom:12px"><input type="checkbox" id="c-ok"> Soy parte de ${esc(F.club)} y puedo confirmar este acuerdo.</label>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="submit" class="btn primary">Confirmar fichaje</button><span class="note" id="c-msg" style="margin:0"></span></div>
+    </form></div>`;
+  $("#conf-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const quien = $("#c-quien").value.trim(), out = $("#c-msg");
+    if (!quien){ out.textContent = "Indicá quién confirma."; $("#c-quien").focus(); return; }
+    if (!$("#c-ok").checked){ out.textContent = "Marcá la casilla para confirmar."; return; }
+    const cur = store.get(p._id); if (!cur || !hasFichaje(cur)) return msg("Este link no es válido", "El anuncio ya no existe.");
+    cur.fichaje = Object.assign({}, cur.fichaje, {confirmado:true, confirmadoPor:quien.slice(0,80), confirmadoFecha:Date.now()});
+    store.set(p._id, cur);
+    if (p._id === ME) S.myDoc = cur;
+    S.confDone = true;
+    msg("¡Fichaje confirmado!", `La novedad de ${esc(p.nombre)} ya aparece como confirmada por el club.`);
+  });
+}
 
 /* ---------- perfil ---------- */
 function openDetail(p){
@@ -513,6 +612,7 @@ function openDetail(p){
       <button class="closex" type="button" aria-label="Cerrar">×</button>
     </div>
     <div class="dbody">
+      ${hasFichaje(p) ? `<div class="fbanner"><b>${esc(TIPOS[p.fichaje.tipo] || "Fichaje")}: ${esc(p.fichaje.club)}</b><span>${esc(fmtD(p.fichaje.fecha))}</span>${p.fichaje.confirmado ? `<span class="vok">✓ Confirmado por el club</span>` : `<span class="vpend">Pendiente de confirmación del club</span>`}</div>` : ""}
       <div>
         <h3>Última temporada${p.temporada ? " · " + esc(p.temporada) : ""}</h3>
         <div class="stats">
@@ -594,6 +694,8 @@ function renderMine(){
       <div class="sec sportsec"><h2>Tu deporte</h2><p class="hint">Fútbol es el principal, pero podés cargar tu ficha en otro deporte. Cuando haya jugadores de un deporte nuevo, aparece solo en la búsqueda.</p>
         <div class="row"><label class="fld"><span class="lbl">Deporte *</span><select id="i-dep" data-k="deporte">${SPORT_KEYS.map(k => `<option value="${k}"${k===D.deporte?" selected":""}>${esc(SPORTS[k].nombre)}</option>`).join("")}</select></label></div>
       </div>
+
+      ${fichajeSecHTML()}
 
       <div class="sec"><h2>Datos personales</h2><p class="hint">Así te van a encontrar los clubes.</p>
         <div class="row">
@@ -683,6 +785,38 @@ function renderMine(){
   renderPreview();
   bindForm();
 }
+function fichajeSecHTML(){
+  if (!S.myDoc) return "";
+  const F = S.myDoc.fichaje;
+  if (hasFichaje(F ? {fichaje:F} : null)){
+    const link = baseUrl() + "#confirmar-" + F.token;
+    return `<div class="sec sportsec" id="fich-sec"><h2>Tu fichaje</h2>
+      <div class="fbanner" style="margin:8px 0 10px"><b>${esc(TIPOS[F.tipo] || "Fichaje")}: ${esc(F.club)}</b><span>${esc(fmtD(F.fecha))}</span>${F.confirmado ? `<span class="vok">✓ Confirmado por ${esc(F.confirmadoPor || "el club")}</span>` : `<span class="vpend">Pendiente de confirmación</span>`}</div>
+      <p class="hint" style="margin:0">Aparece en <b>Últimos fichajes</b>, en la pantalla de inicio. Tu ficha está ${S.myDoc.publicado ? "visible como fichado" : "cerrada: no aparece en la búsqueda"}.</p>
+      ${F.confirmado ? "" : `<p class="note">Para que figure como confirmado, mandale este link a alguien del club (presidente, secretario, DT):</p><div class="linkbox"><code id="conf-link">${esc(link)}</code><button type="button" class="btn sm" id="copy-conf">Copiar link</button></div>`}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px" id="fich-actions">
+        ${S.myDoc.publicado ? `<button type="button" class="btn sm" id="fich-close">Cerrar mi ficha</button>` : `<button type="button" class="btn sm" id="fich-open">Volver a mostrar mi ficha</button>`}
+        <button type="button" class="btn sm danger" id="fich-undo">Quitar anuncio</button>
+      </div></div>`;
+  }
+  const clubs = [...new Set((S.myDoc.trayectoria || []).map(t => t.club).filter(Boolean))];
+  return `<div class="sec sportsec" id="fich-sec"><h2>¿Arreglaste con un club?</h2><p class="hint">Anunciá tu fichaje. Aparece como novedad en la pantalla de inicio, con la fecha, y el club lo puede confirmar.</p>
+    <button type="button" class="btn primary" id="fich-start">Anunciar mi fichaje</button>
+    <div id="fich-form" hidden style="margin-top:14px">
+      <div class="row">
+        <label class="fld"><span class="lbl">Club *</span><input type="text" id="fx-club" maxlength="60" list="fx-clubs" placeholder="Nombre del club"><datalist id="fx-clubs">${clubs.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
+        <label class="fld"><span class="lbl">Fecha del acuerdo *</span><input type="date" id="fx-fecha" value="${today()}" max="${today()}"></label>
+        <label class="fld"><span class="lbl">Tipo</span><select id="fx-tipo">${Object.entries(TIPOS).map(([k,v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select></label>
+      </div>
+      <div class="lbl" style="margin-bottom:4px">¿Qué hacemos con tu ficha?</div>
+      <div class="radios">
+        <label><input type="radio" name="fx-cierre" id="fx-vis" value="visible" checked> Dejarla visible, marcada como fichado</label>
+        <label><input type="radio" name="fx-cierre" id="fx-cer" value="cerrar"> Cerrarla: deja de aparecer en la búsqueda (el anuncio queda en novedades)</label>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="button" class="btn primary" id="fich-send">Publicar anuncio</button><button type="button" class="btn" id="fich-cancel">Cancelar</button><span class="note" id="fx-msg" style="margin:0"></span></div>
+    </div></div>`;
+}
+function saveDoc(doc){ store.set(ME, doc); S.myDoc = doc; S.draft = fromDoc(doc); S.dirty = false; renderMine(); }
 function trowHTML(t, i){
   const cats = SP(S.draft).categorias;
   return `<div class="trow" data-i="${i}">
@@ -739,6 +873,31 @@ function bindForm(){
     if (id === "rm-foto"){ D.foto = ""; $("#thumb").innerHTML = "Sin foto"; e.target.remove(); touch(); }
     if (id === "del") $("#del-zone").innerHTML = `<span class="confirm">¿Borrar tu ficha? <button type="button" class="btn sm danger" id="del-yes">Sí, borrar</button><button type="button" class="btn sm" id="del-no">Cancelar</button></span>`;
     if (id === "del-no") $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`;
+    if (id === "fich-start"){ $("#fich-form").hidden = false; e.target.hidden = true; $("#fx-club").focus(); }
+    if (id === "fich-cancel"){ $("#fich-form").hidden = true; $("#fich-start").hidden = false; }
+    if (id === "fich-send"){
+      const club = $("#fx-club").value.trim(), fecha = $("#fx-fecha").value, tipo = $("#fx-tipo").value, out = $("#fx-msg");
+      if (!club){ out.textContent = "Escribí el nombre del club."; $("#fx-club").focus(); return; }
+      if (!fecha || fecha > today()){ out.textContent = "Elegí la fecha del acuerdo (no puede ser futura)."; return; }
+      const doc = JSON.parse(JSON.stringify(S.myDoc));
+      doc.fichaje = {club: club.slice(0,60), fecha, tipo: TIPOS[tipo] ? tipo : "fichaje", token: hex(), confirmado:false, anunciado: Date.now()};
+      doc.disponibilidad = "fichado";
+      if (tipo !== "prueba") doc.clubActual = club.slice(0,60);
+      const tr = Array.isArray(doc.trayectoria) ? doc.trayectoria : [];
+      if (tipo !== "prueba" && !tr.some(t => String(t.club).trim().toLowerCase() === club.toLowerCase())) tr.unshift({club: club.slice(0,60), categoria:"", desde: +fecha.slice(0,4), hasta:"", logros:""});
+      doc.trayectoria = tr;
+      doc.publicado = !$("#fx-cer").checked;
+      doc.actualizado = Date.now();
+      saveDoc(doc);
+      const m2 = $("#save-msg"); if (m2){ m2.className = "msg ok"; m2.textContent = "¡Fichaje anunciado! Ya aparece en Últimos fichajes."; }
+    }
+    if (id === "copy-conf"){ const code = $("#conf-link");
+      Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(code.textContent)).then(() => { e.target.textContent = "Copiado"; setTimeout(() => e.target.textContent = "Copiar link", 1500); })
+        .catch(() => { const r = document.createRange(); r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }); }
+    if (id === "fich-close" || id === "fich-open"){ const doc = JSON.parse(JSON.stringify(S.myDoc)); doc.publicado = id === "fich-open"; doc.actualizado = Date.now(); saveDoc(doc); }
+    if (id === "fich-undo") $("#fich-actions").insertAdjacentHTML("beforeend", `<span class="confirm" id="fich-undo-ask">¿Quitar el anuncio? <button type="button" class="btn sm danger" id="fich-undo-yes">Sí, quitar</button><button type="button" class="btn sm" id="fich-undo-no">No</button></span>`), e.target.disabled = true;
+    if (id === "fich-undo-no"){ $("#fich-undo-ask").remove(); $("#fich-undo").disabled = false; }
+    if (id === "fich-undo-yes"){ const doc = JSON.parse(JSON.stringify(S.myDoc)); delete doc.fichaje; if (doc.disponibilidad === "fichado") doc.disponibilidad = "libre"; doc.publicado = true; doc.actualizado = Date.now(); saveDoc(doc); }
     if (id === "del-yes"){ store.del(ME); S.myDoc = null; S.draft = null; S.dirty = false; renderMine(); $("#save-msg").textContent = "Tu ficha fue borrada."; }
   });
   f.addEventListener("change", e => {
@@ -796,7 +955,8 @@ function clean(D){
     cualidades: D.cualidades.filter(t => sp.cualidades.includes(t)), bio: D.bio.trim().slice(0,800), foto: assetId(D.foto),
     videos: D.videos.slice(0,MAX_VIDEOS).map(v => v.tipo==="archivo" ? {tipo:"archivo", id:assetId(v.id), titulo:String(v.titulo||"").slice(0,60)} : {tipo:"link", url:safeUrl(v.url), titulo:String(v.titulo||"").slice(0,60)}).filter(v=>v.id||v.url),
     contacto: {telefono:D.contacto.telefono.trim().slice(0,25), email:D.contacto.email.trim().slice(0,80), instagram:D.contacto.instagram.trim().slice(0,40)},
-    publicado: !!D.publicado, actualizado: Date.now()
+    publicado: !!D.publicado, actualizado: Date.now(),
+    ...(S.myDoc && hasFichaje(S.myDoc) ? {fichaje: S.myDoc.fichaje} : {})
   };
 }
 function saveMine(){
@@ -807,7 +967,9 @@ function saveMine(){
   store.set(ME, data);
   S.myDoc = data; S.dirty = false;
   if (data.publicado){ S.sport = data.deporte; try { localStorage.setItem("fa_sport", S.sport); } catch {} syncSportFilters(); }
-  m.className = "msg ok"; m.textContent = data.publicado ? `Ficha publicada en ${SPORTS[data.deporte].nombre}. Ya la pueden ver los clubes.` : "Ficha guardada como oculta.";
+  const first = !$("#fich-sec");
+  if (first){ S.draft = fromDoc(data); renderMine(); }
+  const m3 = $("#save-msg"); m3.className = "msg ok"; m3.textContent = data.publicado ? `Ficha publicada en ${SPORTS[data.deporte].nombre}. Ya la pueden ver los clubes.` : "Ficha guardada como oculta.";
   $("#save").textContent = "Guardar cambios";
   if (!$("#del")) $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`;
 }
@@ -819,7 +981,7 @@ topBars(); route(); renderGrid();
   for (const [id, blob] of await idbAll()) urls.set(id, URL.createObjectURL(blob));
   S.assets = idb ? uploader : null;
   S.myDoc = store.get(ME);
-  store.subscribe(list => { S.players = list.map(p => (p.lado || !p.pie) ? p : Object.assign({}, p, {lado: p.pie})); S.loaded = true; renderGrid(); if (location.hash === "#mi-ficha" && !S.draft) renderMine(); });
+  store.subscribe(list => { S.players = list.map(p => (p.lado || !p.pie) ? p : Object.assign({}, p, {lado: p.pie})); S.loaded = true; renderGrid(); if (location.hash === "#mi-ficha" && !S.draft) renderMine(); if (/^#confirmar-/.test(location.hash) && !$("#conf-form") && !S.confDone) renderConfirm(); });
 })();
 })();
 </script>
