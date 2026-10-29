@@ -185,6 +185,8 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
+.testbar{background:#b3362b;color:#fff;font-size:14px}
+.testbar .wrap{padding-block:8px}
 .demobar{background:var(--accent);color:var(--accent-ink);font-size:14px}
 .demobar .wrap{display:flex;gap:10px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:8px}
 .demobar .demo-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -725,6 +727,11 @@ const EJEMPLOS = [
   {nombre:"Ejemplo · Tomás Ríos", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"AR", nacionalidad2:"IT", pasaporteUE:true, pais:"AR", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], pie:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true}
 ];
 function demoBar(){
+  if (/pruebas/i.test(location.hostname)){
+    const t = document.createElement("div"); t.className = "testbar";
+    t.innerHTML = `<div class="wrap"><b>SITIO DE PRUEBAS.</b> Acá se ven los cambios antes de publicarlos. El sitio oficial todavía no cambió.</div>`;
+    document.body.insertBefore(t, document.body.firstChild);
+  }
   const bar = document.createElement("div"); bar.className = "demobar";
   bar.innerHTML = `<div class="wrap"><span><b>Modo demo.</b> Las fichas, fotos y videos se guardan solo en este navegador.</span><span class="demo-act"><button type="button" class="btn sm" id="demo-seed">Cargar 3 jugadores de ejemplo</button><span id="demo-reset-zone"><button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button></span></span></div>`;
   document.body.insertBefore(bar, document.body.firstChild);
