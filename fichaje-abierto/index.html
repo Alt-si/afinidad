@@ -54,8 +54,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 main .wrap{padding-block:24px 56px}
 
 /* Filtros */
-.filters{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end;margin-bottom:18px}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-items:end;margin-bottom:18px}
 @media (max-width:820px){.filters{grid-template-columns:1fr 1fr}.filters .f-q{grid-column:1/-1}}
+.filters .f-q{grid-column:span 2}
 label.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
 .lbl{font-family:var(--f-data);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],input[type=url],select,textarea{
@@ -213,9 +214,11 @@ img{max-width:100%}
         <label class="fld f-q"><span class="lbl">Buscar</span><input type="text" id="f-q" placeholder="Nombre, ciudad, club…"></label>
         <label class="fld" id="f-dep-wrap" hidden><span class="lbl">Deporte</span><select id="f-dep"></select></label>
         <label class="fld"><span class="lbl">Posición</span><select id="f-pos"></select></label>
-        <label class="fld"><span class="lbl">Provincia</span><select id="f-prov"></select></label>
+        <label class="fld"><span class="lbl">País</span><select id="f-pais"></select></label>
+        <label class="fld" id="f-prov-wrap"><span class="lbl">Provincia</span><select id="f-prov"></select></label>
         <label class="fld"><span class="lbl">Pie hábil</span><select id="f-pie"><option value="">Todos</option><option value="derecho">Derecho</option><option value="izquierdo">Izquierdo</option><option value="ambidiestro">Ambidiestro</option></select></label>
         <label class="chk"><input type="checkbox" id="f-libres"> Solo libres</label>
+        <label class="chk"><input type="checkbox" id="f-ue"> Pasaporte UE</label>
       </div>
       <div class="resbar"><div class="count" id="count">Cargando fichas…</div></div>
       <div id="grid"></div>
@@ -246,7 +249,22 @@ const SPORTS = {
 const DEPORTE = "futbol";
 const POS = SPORTS[DEPORTE].posiciones;
 const POSMAP = Object.fromEntries(POS);
-const PROV = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán","Fuera de Argentina"];
+const PROV = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
+const ISO = new Set("AF,AL,DE,AD,AO,AG,SA,DZ,AR,AM,AU,AT,AZ,BS,BD,BB,BH,BE,BZ,BJ,BY,BO,BA,BW,BR,BN,BG,BF,BI,BT,CV,KH,CM,CA,QA,TD,CL,CN,CY,CO,KM,CG,CD,KP,KR,CI,CR,HR,CU,DK,DM,EC,EG,SV,AE,ER,SK,SI,ES,US,EE,SZ,ET,PH,FI,FJ,FR,GA,GM,GE,GH,GD,GR,GT,GN,GQ,GW,GY,HT,HN,HK,HU,IN,ID,IQ,IR,IE,IS,MH,SB,IL,IT,JM,JP,JO,KZ,KE,KG,KI,XK,KW,LA,LS,LV,LB,LR,LY,LI,LT,LU,MO,MK,MG,MY,MW,MV,ML,MT,MA,MU,MR,MX,FM,MD,MC,MN,ME,MZ,MM,NA,NR,NP,NI,NE,NG,NO,NZ,OM,NL,PK,PW,PS,PA,PG,PY,PE,PL,PT,PR,GB,CF,CZ,DO,RW,RO,RU,WS,KN,SM,VC,LC,ST,SN,RS,SC,SL,SG,SY,SO,LK,ZA,SD,SS,SE,CH,SR,TH,TW,TZ,TJ,TL,TG,TO,TT,TN,TM,TR,TV,UA,UG,UY,UZ,VU,VA,VE,VN,YE,DJ,ZM,ZW".split(","));
+const regionNames = (() => { try { return new Intl.DisplayNames(["es"], {type:"region"}); } catch { return null; } })();
+const cName = c => { try { return (regionNames && regionNames.of(c)) || c; } catch { return c; } };
+const COUNTRIES = [["AR", cName("AR")]].concat([...ISO].filter(c => c !== "AR").map(c => [c, cName(c)]).sort((a,b) => a[1].localeCompare(b[1], "es")));
+const flag = c => ISO.has(c) ? String.fromCodePoint(...[...c].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) : "";
+const paisOf = p => ISO.has(p.pais) ? p.pais : (p.provincia === "Fuera de Argentina" ? "" : "AR");
+const natName = v => ISO.has(v) ? cName(v) : String(v || "");
+const placeOf = p => { const c = paisOf(p); const parts = [p.ciudad, p.provincia === "Fuera de Argentina" ? "" : p.provincia].filter(Boolean); if (c && c !== "AR") parts.push(cName(c)); return parts.length ? (c ? flag(c) + " " : "") + parts.join(", ") : ""; };
+const natCode = v => { if (ISO.has(v)) return v; const t = String(v || "").trim().toLowerCase(); const hit = COUNTRIES.find(([,n]) => n.toLowerCase() === t); return hit ? hit[0] : ""; };
+const countryOpts = (val, ph) => `<option value="">${ph}</option>` + COUNTRIES.map(([k,v]) => `<option value="${k}"${k===val?" selected":""}>${esc(v)}</option>`).join("");
+function provFieldHTML(D){
+  return D.pais === "AR"
+    ? `<label class="fld"><span class="lbl">Provincia</span><select id="i-prov" data-k="provincia"><option value="">Elegí…</option>${PROV.map(p => `<option${p===D.provincia?" selected":""}>${esc(p)}</option>`).join("")}</select></label>`
+    : `<label class="fld"><span class="lbl">Provincia / estado / región</span><input type="text" id="i-prov" data-k="provincia" maxlength="50" value="${esc(D.provincia)}"></label>`;
+}
 const CATS = SPORTS[DEPORTE].categorias;
 const TRAITS = SPORTS[DEPORTE].cualidades;
 const DISP = {libre:"Libre ahora", abierto:"Con club · escucha ofertas", prueba:"Disponible para pruebas"};
@@ -266,8 +284,10 @@ const S = { db:null, user:null, assets:null, uid:null, canWrite:null, players:[]
 $("#f-pos").innerHTML = `<option value="">Todas</option>` + POS.map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("");
 $("#f-dep").innerHTML = Object.entries(SPORTS).map(([k,v])=>`<option value="${k}">${esc(v.nombre)}</option>`).join("");
 $("#f-dep-wrap").hidden = Object.keys(SPORTS).length < 2;
+$("#f-pais").innerHTML = countryOpts("", "Todos");
+$("#f-pais").addEventListener("input", () => { const ar = !$("#f-pais").value || $("#f-pais").value === "AR"; $("#f-prov-wrap").hidden = !ar; if (!ar) $("#f-prov").value = ""; });
 $("#f-prov").innerHTML = `<option value="">Todas</option>` + PROV.map(p=>`<option>${esc(p)}</option>`).join("");
-["#f-q","#f-dep","#f-pos","#f-prov","#f-pie","#f-libres"].forEach(s => $(s).addEventListener("input", renderGrid));
+["#f-q","#f-dep","#f-pos","#f-prov","#f-pie","#f-libres","#f-pais","#f-ue"].forEach(s => $(s).addEventListener("input", renderGrid));
 
 /* ---------- rutas ---------- */
 function route(){
@@ -292,7 +312,7 @@ function cardHTML(p, asButton = true){
     ${photoHTML(p)}
     <div class="pbody">
       <div class="pname">${esc(p.nombre || "Tu nombre")}</div>
-      <div class="pmeta">${esc(POSMAP[p.posicion] || "Posición")} · ${esc([p.ciudad, p.provincia].filter(Boolean).join(", ") || "Ciudad")}</div>
+      <div class="pmeta">${esc(POSMAP[p.posicion] || "Posición")} · ${esc(placeOf(p) || "Ciudad")}</div>
       ${DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}">${esc(DISP[p.disponibilidad])}</div>` : ""}
       <div class="specs">
         <div><span>Edad</span><b>${a ?? "–"}</b></div>
@@ -312,13 +332,13 @@ function renderGrid(){
     return;
   }
   if (!S.loaded){ count.textContent = "Cargando fichas…"; return; }
-  const q = $("#f-q").value.trim().toLowerCase(), pos = $("#f-pos").value, prov = $("#f-prov").value, pie = $("#f-pie").value, libres = $("#f-libres").checked;
+  const q = $("#f-q").value.trim().toLowerCase(), pais = $("#f-pais").value, ue = $("#f-ue").checked, pos = $("#f-pos").value, prov = $("#f-prov").value, pie = $("#f-pie").value, libres = $("#f-libres").checked;
   const dep = $("#f-dep").value || DEPORTE;
   const all = S.players.filter(p => p.publicado && p.nombre && (p.deporte || "futbol") === dep);
   const list = all.filter(p =>
     (!pos || p.posicion === pos || (Array.isArray(p.posSec) && p.posSec.includes(pos))) &&
-    (!prov || p.provincia === prov) && (!pie || p.pie === pie) && (!libres || p.disponibilidad === "libre") &&
-    (!q || [p.nombre,p.apodo,p.ciudad,p.provincia,p.clubActual].join(" ").toLowerCase().includes(q)));
+    (!pais || paisOf(p) === pais) && (!prov || p.provincia === prov) && (!ue || p.pasaporteUE === true) && (!pie || p.pie === pie) && (!libres || p.disponibilidad === "libre") &&
+    (!q || [p.nombre,p.apodo,p.ciudad,p.provincia,p.clubActual,cName(paisOf(p)||"")].join(" ").toLowerCase().includes(q)));
   if (!all.length){
     count.textContent = "0 jugadores";
     grid.innerHTML = `<div class="empty"><h2>Todavía no hay fichas publicadas</h2><p>Acá van a aparecer los jugadores con su foto, posición, trayectoria y videos. Si jugás, cargá tu ficha y sé el primero que ven los clubes.</p><a class="btn primary" href="#mi-ficha">Cargar mi ficha</a></div>`;
@@ -351,7 +371,8 @@ function openDetail(p){
         <div class="pname">${esc(p.nombre)}</div>
         ${p.apodo ? `<div class="apodo">"${esc(p.apodo)}"</div>` : ""}
         <div class="pmeta">${esc(POSMAP[p.posicion] || "")}${sec.length ? " · también " + esc(sec.map(k=>POSMAP[k]).join(", ")) : ""}</div>
-        <div class="pmeta">${esc([p.ciudad,p.provincia].filter(Boolean).join(", "))}${p.nacionalidad ? " · " + esc(p.nacionalidad) : ""}</div>
+        <div class="pmeta">${esc(placeOf(p))}</div>
+        <div class="pmeta">${esc(["Nacionalidad: " + [natName(p.nacionalidad), natName(p.nacionalidad2)].filter(Boolean).join(" y "), p.pasaporteUE ? "Pasaporte UE" : ""].filter(x => x && x !== "Nacionalidad: ").join(" · "))}</div>
         ${DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}" style="color:var(--accent)">${esc(DISP[p.disponibilidad])}</div>` : ""}
         <div class="kv">
           <div><span>Edad</span><b>${a ?? "–"}</b></div>
@@ -414,11 +435,12 @@ $("#detail").addEventListener("click", e => {
 
 /* ---------- mi ficha ---------- */
 function blank(){
-  return { deporte: DEPORTE, nombre:"", apodo:"", fechaNac:"", nacionalidad:"Argentina", ciudad:"", provincia:"", dorsal:"", posicion:"", posSec:[], pie:"", altura:"", peso:"", clubActual:"", disponibilidad:"libre",
+  return { deporte: DEPORTE, nombre:"", apodo:"", fechaNac:"", nacionalidad:"AR", nacionalidad2:"", pais:"AR", ciudad:"", provincia:"", pasaporteUE:false, dorsal:"", posicion:"", posSec:[], pie:"", altura:"", peso:"", clubActual:"", disponibilidad:"libre",
     temporada:"", stats:{partidos:"",goles:"",asistencias:"",vallas:""}, trayectoria:[{club:"",categoria:"",desde:"",hasta:"",logros:""}], cualidades:[], bio:"",
     foto:"", videos:[], contacto:{telefono:"",email:"",instagram:""}, publicado:true };
 }
 function fromDoc(d){ const b = blank(); const x = Object.assign(b, JSON.parse(JSON.stringify(d||{}))); x.stats = Object.assign(blank().stats, x.stats||{}); x.contacto = Object.assign(blank().contacto, x.contacto||{});
+  x.pais = paisOf(x); if (x.provincia === "Fuera de Argentina") x.provincia = ""; x.nacionalidad = natCode(x.nacionalidad); x.nacionalidad2 = natCode(x.nacionalidad2); x.pasaporteUE = x.pasaporteUE === true;
   ["posSec","cualidades","videos","trayectoria"].forEach(k => { if (!Array.isArray(x[k])) x[k] = []; }); if (!x.trayectoria.length) x.trayectoria = blank().trayectoria; delete x._id; return x; }
 
 function renderMine(){
@@ -446,12 +468,15 @@ function renderMine(){
         </div>
         <div class="row">
           <label class="fld"><span class="lbl">Fecha de nacimiento</span><input type="date" id="i-fnac" data-k="fechaNac" value="${esc(D.fechaNac)}"></label>
-          <label class="fld"><span class="lbl">Nacionalidad</span><input type="text" id="i-nac" data-k="nacionalidad" maxlength="40" value="${esc(D.nacionalidad)}"></label>
+          <label class="fld"><span class="lbl">Nacionalidad</span><select id="i-nac" data-k="nacionalidad">${countryOpts(D.nacionalidad, "Elegí…")}</select></label>
+          <label class="fld"><span class="lbl">Segunda nacionalidad</span><select id="i-nac2" data-k="nacionalidad2">${countryOpts(D.nacionalidad2, "No tengo")}</select></label>
         </div>
         <div class="row">
+          <label class="fld"><span class="lbl">País donde vivís</span><select id="i-pais" data-k="pais">${countryOpts(D.pais, "Elegí…")}</select></label>
+          <span id="prov-wrap" style="display:contents">${provFieldHTML(D)}</span>
           <label class="fld"><span class="lbl">Ciudad</span><input type="text" id="i-ciudad" data-k="ciudad" maxlength="50" value="${esc(D.ciudad)}"></label>
-          <label class="fld"><span class="lbl">Provincia</span><select id="i-prov" data-k="provincia">${opt(pairs(PROV), D.provincia, "Elegí…")}</select></label>
         </div>
+        <label class="chk" style="white-space:normal"><input type="checkbox" id="i-ue" data-k="pasaporteUE"${D.pasaporteUE?" checked":""}> Tengo pasaporte comunitario (Unión Europea). En Europa no ocupás cupo de extranjero.</label>
       </div>
 
       <div class="sec"><h2>Perfil futbolístico</h2><p class="hint">Tu posición y tus características físicas.</p>
@@ -506,7 +531,7 @@ function renderMine(){
       <div class="sec"><h2>Sobre mí y contacto</h2><p class="hint">Estos datos los ve cualquiera que abra la página. Dejá solo los que quieras compartir.</p>
         <label class="fld" style="margin-bottom:12px"><span class="lbl">Presentación</span><textarea id="i-bio" data-k="bio" maxlength="800" placeholder="Contá cómo jugás, qué buscás y tu disponibilidad para entrenar.">${esc(D.bio)}</textarea></label>
         <div class="row">
-          <label class="fld"><span class="lbl">Teléfono / WhatsApp</span><input type="tel" id="i-tel" data-k="contacto.telefono" maxlength="25" placeholder="+54 9 2317 …" value="${esc(D.contacto.telefono)}"></label>
+          <label class="fld"><span class="lbl">Teléfono / WhatsApp</span><input type="tel" id="i-tel" data-k="contacto.telefono" maxlength="25" placeholder="Con código de país, ej. +54 9 …" value="${esc(D.contacto.telefono)}"></label>
           <label class="fld"><span class="lbl">Email</span><input type="email" id="i-mail" data-k="contacto.email" maxlength="80" value="${esc(D.contacto.email)}"></label>
           <label class="fld"><span class="lbl">Instagram</span><input type="text" id="i-ig" data-k="contacto.instagram" maxlength="40" placeholder="@usuario" value="${esc(D.contacto.instagram)}"></label>
         </div>
@@ -558,6 +583,7 @@ function bindForm(){
   f.addEventListener("input", e => {
     const el = e.target, D = S.draft;
     if (el.dataset.k){ setPath(D, el.dataset.k, el.type === "checkbox" ? el.checked : el.value);
+      if (el.dataset.k === "pais"){ D.provincia = ""; $("#prov-wrap").innerHTML = provFieldHTML(D); }
       if (el.dataset.k === "posicion") $("#l-vallas").textContent = el.value === "ARQ" ? "Vallas invictas" : "Títulos"; }
     else if (el.dataset.arr){ const a = D[el.dataset.arr]; const i = a.indexOf(el.value); if (el.checked && i<0) a.push(el.value); if (!el.checked && i>=0) a.splice(i,1); }
     else if (el.dataset.t){ const i = +el.closest(".trow").dataset.i; D.trayectoria[i][el.dataset.t] = el.value; }
@@ -631,8 +657,8 @@ async function uploadVideo(file){
 function clean(D){
   const n = v => { const x = num(v); return x === null || v === "" ? "" : x; };
   return {
-    deporte: SPORTS[D.deporte] ? D.deporte : DEPORTE, nombre: D.nombre.trim().slice(0,60), apodo: D.apodo.trim().slice(0,30), fechaNac: D.fechaNac, nacionalidad: D.nacionalidad.trim().slice(0,40),
-    ciudad: D.ciudad.trim().slice(0,50), provincia: PROV.includes(D.provincia) ? D.provincia : "",
+    deporte: SPORTS[D.deporte] ? D.deporte : DEPORTE, nombre: D.nombre.trim().slice(0,60), apodo: D.apodo.trim().slice(0,30), fechaNac: D.fechaNac, nacionalidad: ISO.has(D.nacionalidad) ? D.nacionalidad : "", nacionalidad2: ISO.has(D.nacionalidad2) && D.nacionalidad2 !== D.nacionalidad ? D.nacionalidad2 : "", pasaporteUE: !!D.pasaporteUE, pais: ISO.has(D.pais) ? D.pais : "",
+    ciudad: D.ciudad.trim().slice(0,50), provincia: D.pais === "AR" ? (PROV.includes(D.provincia) ? D.provincia : "") : String(D.provincia || "").trim().slice(0,50),
     dorsal: n(D.dorsal), posicion: POSMAP[D.posicion] ? D.posicion : "", posSec: D.posSec.filter(k=>POSMAP[k]),
     pie: ["derecho","izquierdo","ambidiestro"].includes(D.pie) ? D.pie : "", altura: n(D.altura), peso: n(D.peso),
     clubActual: D.clubActual.trim().slice(0,60), disponibilidad: DISP[D.disponibilidad] ? D.disponibilidad : "",
@@ -694,9 +720,9 @@ const localDB = {
 const localAssets = { async upload(blob){ const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,"0")).join(""); await idbPut(id, blob); const url = URL.createObjectURL(blob); urls.set(id, url); return {id, url, sizeBytes: blob.size, contentType: blob.type}; } };
 
 const EJEMPLOS = [
-  {nombre:"Ejemplo · Matías Correa", apodo:"Mati", fechaNac:"2001-04-12", nacionalidad:"Argentina", ciudad:"9 de Julio", provincia:"Buenos Aires", dorsal:9, posicion:"DC", posSec:["EI"], pie:"derecho", altura:181, peso:77, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:24, goles:17, asistencias:5, vallas:1}, trayectoria:[{club:"Club Atlético Ejemplo", categoria:"Liga regional", desde:2022, hasta:2025, logros:"Goleador del Apertura"}], cualidades:["Definición","Juego aéreo","Velocidad"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[{tipo:"link", url:"https://www.youtube.com/", titulo:"Goles 2025 (link de ejemplo)"}], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
-  {nombre:"Ejemplo · Lucas Benítez", apodo:"", fechaNac:"1998-09-03", nacionalidad:"Argentina", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], pie:"derecho", altura:189, peso:84, clubActual:"Sportivo Ejemplo", disponibilidad:"abierto", temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
-  {nombre:"Ejemplo · Tomás Ríos", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"Argentina", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], pie:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true}
+  {nombre:"Ejemplo · Matías Correa", apodo:"Mati", fechaNac:"2001-04-12", nacionalidad:"AR", pais:"AR", ciudad:"9 de Julio", provincia:"Buenos Aires", dorsal:9, posicion:"DC", posSec:["EI"], pie:"derecho", altura:181, peso:77, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:24, goles:17, asistencias:5, vallas:1}, trayectoria:[{club:"Club Atlético Ejemplo", categoria:"Liga regional", desde:2022, hasta:2025, logros:"Goleador del Apertura"}], cualidades:["Definición","Juego aéreo","Velocidad"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[{tipo:"link", url:"https://www.youtube.com/", titulo:"Goles 2025 (link de ejemplo)"}], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
+  {nombre:"Ejemplo · Lucas Benítez", apodo:"", fechaNac:"1998-09-03", nacionalidad:"AR", pais:"AR", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], pie:"derecho", altura:189, peso:84, clubActual:"Sportivo Ejemplo", disponibilidad:"abierto", temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
+  {nombre:"Ejemplo · Tomás Ríos", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"AR", nacionalidad2:"IT", pasaporteUE:true, pais:"AR", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], pie:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true}
 ];
 function demoBar(){
   const bar = document.createElement("div"); bar.className = "demobar";
