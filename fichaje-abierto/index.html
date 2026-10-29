@@ -403,7 +403,7 @@ button.ncard{cursor:pointer}
       <button class="tab" role="tab" id="tab-explorar" data-view="explorar"><span>Jugadores</span></button>
       <button class="tab" role="tab" id="tab-entrenadores" data-view="entrenadores"><span>Entrenadores</span></button>
       <button class="tab" role="tab" id="tab-profes" data-view="profes"><span>Profes</span></button>
-      <button class="tab" role="tab" id="tab-clubes" data-view="clubes"><span>Clubes</span></button>
+      <button class="tab" role="tab" id="tab-clubes" data-view="clubes" hidden><span>Clubes</span></button>
       <button class="tab" role="tab" id="tab-mi-ficha" data-view="mi-ficha"><span>Mi cuenta</span></button>
     </nav>
   </div>
@@ -536,6 +536,8 @@ const SPORT_KEYS = Object.keys(SPORTS);
 for (const k of SPORT_KEYS) SPORTS[k].posMap = Object.fromEntries(SPORTS[k].posiciones);
 const sportOf = p => SPORTS[p && p.deporte] ? p.deporte : "futbol";
 const SP = p => SPORTS[sportOf(p)];
+// Interruptores: poner en true cuando haya movimiento en la página
+const MOSTRAR_CLUBES = false, MOSTRAR_FILTROS_INICIO = false;
 const isProfe = p => !!p && p.perfil === "profe";
 const isDT = p => !!p && p.perfil === "entrenador";
 const isCoach = p => isDT(p) || isProfe(p);   // cuerpo técnico: entrenador o profe
@@ -766,7 +768,7 @@ async function renderRef(){
 /* ---------- rutas ---------- */
 function route(){
   const h = location.hash;
-  const v = h === "#mi-ficha" ? "mi-ficha" : h === "#explorar" ? "explorar" : h === "#entrenadores" ? "entrenadores" : h === "#profes" ? "profes" : h === "#clubes" ? "clubes" : /^#confirmar-[a-f0-9]{32}$/.test(h) ? "confirmar" : /^#ref-[a-f0-9]{32}$/.test(h) ? "ref" : "inicio";
+  const v = h === "#mi-ficha" ? "mi-ficha" : h === "#explorar" ? "explorar" : h === "#entrenadores" ? "entrenadores" : h === "#profes" ? "profes" : h === "#clubes" && MOSTRAR_CLUBES ? "clubes" : /^#confirmar-[a-f0-9]{32}$/.test(h) ? "confirmar" : /^#ref-[a-f0-9]{32}$/.test(h) ? "ref" : "inicio";
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   $("#view-explorar").hidden = v !== "explorar";
   $("#view-inicio").hidden = v !== "inicio";
@@ -1452,6 +1454,9 @@ function renderFeed(){
   const all = feedItems();
   const types = [["", "Todo"], ["prueba", "Pruebas"], ["temporada", "Temporada"], ["noticia", "Noticias"], ["fichaje", "Fichajes"]];
   $("#feedchips").innerHTML = types.map(([k, n]) => { const cnt = k ? all.filter(x => x.tipo === k).length : all.length; return `<button type="button" class="sport" data-feed="${k}" aria-pressed="${S.feedType === k}"><span>${esc(n)}<small>${cnt}</small></span></button>`; }).join("");
+  if (!MOSTRAR_FILTROS_INICIO) S.feedType = "";
+  $("#feedchips").hidden = !MOSTRAR_FILTROS_INICIO;
+  if (MOSTRAR_CLUBES) $("#tab-clubes").hidden = false;
   const list = all.filter(x => !S.feedType || x.tipo === S.feedType).slice(0, 80);
   feed.innerHTML = list.length ? list.map(x => {
     if (x.kind === "post"){ const po = x.po;
