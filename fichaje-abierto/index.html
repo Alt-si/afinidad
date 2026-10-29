@@ -6,124 +6,166 @@
 <title>Fichaje Abierto</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,700;1,800;1,900&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: banda de cancha arriba con la marca y las pestañas; debajo, vitrina en grilla de fichas (Explorar) o formulario + vista previa en vivo (Mi ficha). */
+/* Layout: banda azul noche estilo transmisión deportiva (marca + pestañas sesgadas), cinta de deportes que se despliega según las fichas, grilla de tarjetas tipo "ficha de partido". */
 :root{
-  --bg:#edf1ec; --surface:#ffffff; --surface-2:#f5f8f4; --ink:#13211a; --muted:#56685e; --line:#d2dcd4;
-  --pitch:#0f3a2b; --pitch-2:#145039; --chalk:#eef4ee; --accent:#e9b21c; --accent-ink:#1d1704;
-  --ok:#1f7a4a; --warn:#a86a00; --bad:#b3362b;
-  --f-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --bg:#edf0f5; --surface:#ffffff; --surface-2:#f4f6fa; --ink:#0f1828; --muted:#5a6579; --line:#d5dbe5;
+  --band:#0f1b30; --band-2:#182a4a; --on-band:#eef3fb; --on-band-dim:#a9b6cc;
+  --accent:#f0590a; --accent-ink:#ffffff; --accent-soft:#fde6d8;
+  --ok:#1a7f4b; --warn:#a96400; --bad:#c0352b; --star:#f0a30a;
+  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
   --f-body:"Barlow","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --f-data:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
-  --r:10px;
+  --r:6px;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0b1511; --surface:#12201a; --surface-2:#172820; --ink:#e4ede6; --muted:#93a79b; --line:#253a30;
-  --pitch:#0a2a1f; --pitch-2:#0f3a2b; --chalk:#e4efe6; --accent:#f0c23c; --accent-ink:#1d1704;
-  --ok:#4cc184; --warn:#e3a93b; --bad:#ec7a6e; color-scheme:dark}}
+  --bg:#0a1019; --surface:#111a29; --surface-2:#162236; --ink:#e6ecf5; --muted:#95a2b7; --line:#243248;
+  --band:#070c15; --band-2:#111d33; --on-band:#eef3fb; --on-band-dim:#8d9bb3;
+  --accent:#ff6a1c; --accent-ink:#ffffff; --accent-soft:#3a2216;
+  --ok:#4cc184; --warn:#e3a93b; --bad:#ef7b6f; --star:#f5b632; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0b1511; --surface:#12201a; --surface-2:#172820; --ink:#e4ede6; --muted:#93a79b; --line:#253a30;
-  --pitch:#0a2a1f; --pitch-2:#0f3a2b; --chalk:#e4efe6; --accent:#f0c23c; --accent-ink:#1d1704;
-  --ok:#4cc184; --warn:#e3a93b; --bad:#ec7a6e; color-scheme:dark}
+  --bg:#0a1019; --surface:#111a29; --surface-2:#162236; --ink:#e6ecf5; --muted:#95a2b7; --line:#243248;
+  --band:#070c15; --band-2:#111d33; --on-band:#eef3fb; --on-band-dim:#8d9bb3;
+  --accent:#ff6a1c; --accent-ink:#ffffff; --accent-soft:#3a2216;
+  --ok:#4cc184; --warn:#e3a93b; --bad:#ef7b6f; --star:#f5b632; color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+img{max-width:100%}
+[hidden]{display:none!important}
 h1,h2,h3{text-wrap:balance;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.disp{font-family:var(--f-display);font-style:italic;font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+.lbl{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-/* Banda de cancha */
-.pitch{background:var(--pitch);color:var(--chalk);position:relative;overflow:hidden}
-.pitch::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.14;
-  background:
-   radial-gradient(circle at 100% 50%, transparent 118px, var(--chalk) 119px, var(--chalk) 121px, transparent 122px),
-   linear-gradient(90deg, transparent calc(100% - 2px), var(--chalk) calc(100% - 2px));
-}
-.pitch .wrap{position:relative;padding-block:22px 0}
-.brand{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.brand h1{font-family:var(--f-display);font-weight:900;font-size:clamp(34px,6vw,54px);letter-spacing:.01em;line-height:.95;text-transform:uppercase}
-.brand h1 span{color:var(--accent)}
-.brand p{margin:0;color:color-mix(in srgb,var(--chalk) 75%,transparent);max-width:46ch}
-.tabs{display:flex;gap:4px;margin-top:20px}
-.tab{appearance:none;border:0;background:transparent;color:color-mix(in srgb,var(--chalk) 70%,transparent);padding:10px 16px 12px;border-radius:8px 8px 0 0;cursor:pointer;font-family:var(--f-data);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase}
-.tab:hover{color:var(--chalk)}
-.tab[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+/* Avisos */
+.testbar{background:var(--bad);color:#fff;font-size:14px}
+.testbar .wrap,.demobar .wrap{padding-block:7px;display:flex;gap:8px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.demobar{background:var(--surface);border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+.demobar b{color:var(--ink)}
+.demo-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-main .wrap{padding-block:24px 56px}
+/* Banda */
+.band{background:var(--band);color:var(--on-band);position:relative;overflow:hidden}
+.band::after{content:"";position:absolute;inset:0 0 0 auto;width:min(46%,520px);pointer-events:none;
+  background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.045) 22px 44px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)}
+.band .wrap{position:relative;z-index:1;padding-block:22px 0}
+.brand{display:flex;align-items:flex-end;gap:8px 22px;flex-wrap:wrap}
+.logo{font-family:var(--f-display);font-style:italic;font-weight:900;font-size:clamp(36px,6.4vw,60px);line-height:.88;text-transform:uppercase;letter-spacing:.005em;display:flex;align-items:center;gap:.18em}
+.logo .slash{display:inline-block;width:.32em;height:.84em;background:var(--accent);transform:skewX(-14deg)}
+.logo span{color:var(--accent)}
+.brand p{margin:0;color:var(--on-band-dim);max-width:44ch;font-size:15px;padding-bottom:4px}
+.tabs{display:flex;gap:6px;margin-top:22px}
+.tab{appearance:none;border:0;cursor:pointer;background:transparent;color:var(--on-band-dim);padding:0;position:relative}
+.tab span{display:block;padding:10px 20px 11px;font-family:var(--f-display);font-style:italic;font-weight:800;font-size:18px;letter-spacing:.05em;text-transform:uppercase}
+.tab::before{content:"";position:absolute;inset:0;transform:skewX(-14deg);border-radius:3px 3px 0 0;background:transparent;transition:background .15s}
+.tab span{position:relative;white-space:nowrap}
+@media (max-width:480px){.tab span{font-size:16px;padding:9px 14px 10px}.tabs{gap:2px}}
+.tab:hover{color:var(--on-band)}
+.tab:hover::before{background:var(--band-2)}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::before{background:var(--bg)}
+
+main .wrap{padding-block:22px 56px}
+
+/* Cinta de deportes */
+.sportbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.sportbar .lbl{margin-right:6px}
+.sport{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;position:relative;color:var(--ink)}
+.sport::before{content:"";position:absolute;inset:0;transform:skewX(-14deg);border:1px solid var(--line);background:var(--surface);border-radius:3px}
+.sport span{position:relative;display:flex;gap:8px;align-items:baseline;padding:7px 16px;font-family:var(--f-display);font-style:italic;font-weight:800;font-size:17px;letter-spacing:.04em;text-transform:uppercase}
+.sport small{font-style:normal;font-weight:600;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sport[aria-pressed="true"]{color:var(--accent-ink)}
+.sport[aria-pressed="true"]::before{background:var(--accent);border-color:var(--accent)}
+.sport[aria-pressed="true"] small{color:var(--accent-ink);opacity:.85}
+.sport.new span::after{content:"Nuevo";font-style:normal;font-family:var(--f-body);font-size:11px;font-weight:700;letter-spacing:.04em;background:var(--ink);color:var(--surface);padding:1px 6px;border-radius:3px;align-self:center}
 
 /* Filtros */
-.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-items:end;margin-bottom:18px}
-@media (max-width:820px){.filters{grid-template-columns:1fr 1fr}.filters .f-q{grid-column:1/-1}}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-items:end;margin-bottom:16px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .filters .f-q{grid-column:span 2}
+@media (max-width:520px){.filters .f-q{grid-column:1/-1}}
 label.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
-.lbl{font-family:var(--f-data);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],input[type=url],select,textarea{
-  width:100%;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;}
+  width:100%;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:9px 11px}
+.filters input,.filters select{background:var(--surface-2)}
 textarea{resize:vertical;min-height:90px}
-.chk{display:flex;gap:8px;align-items:center;padding:9px 0;white-space:nowrap;cursor:pointer}
-.chk input{width:18px;height:18px;accent-color:var(--pitch-2)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.chk{display:flex;gap:8px;align-items:center;padding:9px 0;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--accent);flex:none}
 
 .resbar{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-.resbar .count{font-family:var(--f-data);font-weight:600;font-size:16px;letter-spacing:.04em;color:var(--muted);font-variant-numeric:tabular-nums}
+.resbar .count{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
 
-/* Fichas */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-.pcard{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .15s ease,border-color .15s ease}
-.pcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--pitch-2) 50%,var(--line))}
-.photo{position:relative;aspect-ratio:4/5;max-width:100%;background:var(--pitch);overflow:hidden}
+/* Tarjetas */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:16px}
+.pcard{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 10px 24px -14px rgba(15,24,40,.45)}
+.photo{position:relative;aspect-ratio:4/5;max-width:100%;background:var(--band-2);overflow:hidden}
 .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.photo .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:64px;color:color-mix(in srgb,var(--chalk) 25%,transparent)}
-.dorsal{position:absolute;left:10px;top:8px;font-family:var(--f-display);font-weight:900;font-size:44px;line-height:1;color:var(--accent);text-shadow:0 2px 10px rgba(0,0,0,.45)}
-.pos{position:absolute;right:10px;top:12px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-data);font-weight:700;letter-spacing:.06em;font-size:14px;padding:2px 8px;border-radius:4px}
-.pbody{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
-.pname{font-family:var(--f-display);font-weight:800;font-size:24px;line-height:1.05;text-transform:uppercase;letter-spacing:.01em}
-.pmeta{color:var(--muted);font-size:14px}
-.specs{display:flex;gap:14px;font-family:var(--f-data);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
-.specs b{font-weight:700}
-.specs span{color:var(--muted);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;display:block}
+.photo .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-style:italic;font-weight:900;font-size:72px;color:rgba(238,243,251,.16)}
+.photo .shade{position:absolute;inset:auto 0 0 0;height:58%;background:linear-gradient(0deg,rgba(7,12,21,.92),rgba(7,12,21,0))}
+.photo .on{position:absolute;left:12px;right:12px;bottom:10px;color:#fff}
+.photo .on .pname{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:25px;line-height:1;text-transform:uppercase;letter-spacing:.01em}
+.photo .on .pmeta{color:rgba(255,255,255,.78);font-size:13px;margin-top:3px}
+.dorsal{position:absolute;left:10px;top:4px;font-family:var(--f-display);font-style:italic;font-weight:900;font-size:56px;line-height:1;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.85)}
+.pos{position:absolute;right:12px;top:12px;font-family:var(--f-display);font-weight:700;letter-spacing:.06em;font-size:14px;color:var(--accent-ink);padding:0}
+.pos::before{content:"";position:absolute;inset:0;background:var(--accent);transform:skewX(-14deg);border-radius:2px}
+.pos b{position:relative;display:block;padding:2px 10px;font-weight:700}
+.pbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
 .status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
 .status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
 .st-libre{color:var(--ok)} .st-abierto{color:var(--warn)} .st-prueba{color:var(--muted)}
+.specs{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:4px;margin-top:auto;overflow:hidden}
+.specs div{padding:5px 8px;border-right:1px solid var(--line);background:var(--surface-2)}
+.specs div:last-child{border-right:0}
+.specs span{display:block;font-family:var(--f-display);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.specs b{font-family:var(--f-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.sporttag{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-.empty{border:2px dashed var(--line);border-radius:var(--r);padding:36px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
-.empty h2{font-family:var(--f-display);font-weight:800;font-size:28px;text-transform:uppercase}
+.empty{border:2px dashed var(--line);border-radius:var(--r);padding:36px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--surface)}
+.empty h2{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:30px;text-transform:uppercase}
 .empty p{margin:0;color:var(--muted);max-width:52ch}
 
-.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
 .btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{filter:brightness(1.05)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-style:italic;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:17px;padding:8px 20px}
+.btn.primary:hover{filter:brightness(1.07)}
 .btn.danger{color:var(--bad)}
 .btn.sm{padding:5px 10px;font-size:13px}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 
 /* Mi ficha */
-.edit{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
-@media (max-width:900px){.edit{grid-template-columns:1fr;gap:16px}.edit>.preview-col{order:-1;position:static;display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 14px;align-items:start}.preview-col>.lbl{grid-column:1/-1}.preview-col #full-prev{align-self:end;justify-self:start}.preview-col .pname{font-size:18px}.preview-col .pbody{padding:8px 10px 10px}.preview-col .pmeta,.preview-col .status{font-size:12px}.preview-col .specs{display:none}.preview-col .dorsal{font-size:30px}.preview-col .pos{font-size:12px;top:8px;right:6px}}
+.edit{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:28px;align-items:start}
 .preview-col{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px}
-.preview-col .lbl{margin-bottom:2px}
+@media (max-width:900px){.edit{grid-template-columns:1fr;gap:16px}
+  .edit>.preview-col{order:-1;position:static;display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 14px;align-items:start}
+  .preview-col>.lbl{grid-column:1/-1}.preview-col #full-prev{align-self:end;justify-self:start}
+  .preview-col .photo .on .pname{font-size:18px}.preview-col .pbody{display:none}.preview-col .dorsal{font-size:36px}.preview-col .pos{font-size:12px;top:8px;right:8px}}
 .sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 20px;margin-bottom:16px}
-.sec h2{font-family:var(--f-display);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.sec h2{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px}
 .sec .hint{color:var(--muted);font-size:14px;margin:0 0 14px}
+.sec.sportsec{border-color:var(--accent);background:linear-gradient(90deg,var(--accent-soft),var(--surface) 70%)}
 .row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:12px}
 .row:last-child{margin-bottom:0}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:14px;user-select:none;background:var(--surface-2)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:3px;padding:5px 12px;cursor:pointer;font-size:14px;user-select:none;background:var(--surface-2)}
 .chip input{position:absolute;opacity:0;pointer-events:none}
-.chip:has(input:checked){background:var(--pitch-2);border-color:var(--pitch-2);color:var(--chalk)}
+.chip:has(input:checked){background:var(--band-2);border-color:var(--band-2);color:var(--on-band)}
 .chip:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
 .traj{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
-.trow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) 80px 80px minmax(0,2fr) auto;gap:8px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.trow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) 80px 80px minmax(0,2fr) auto;gap:8px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2)}
 @media (max-width:760px){.trow{grid-template-columns:1fr 1fr}.trow .t-club,.trow .t-logros{grid-column:1/-1}}
 .media-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.thumb{width:110px;aspect-ratio:4/5;border-radius:8px;background:var(--pitch);overflow:hidden;display:grid;place-items:center;color:color-mix(in srgb,var(--chalk) 40%,transparent);font-size:13px;flex:none}
+.thumb{width:110px;aspect-ratio:4/5;border-radius:4px;background:var(--band-2);overflow:hidden;display:grid;place-items:center;color:var(--on-band-dim);font-size:13px;flex:none}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .vlist{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.vitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
-.vitem .vtag{font-family:var(--f-data);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:var(--line);padding:2px 6px;border-radius:4px}
-.vitem input{background:var(--surface)}
+.vitem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2)}
+.vitem .vtag{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:var(--line);padding:2px 6px;border-radius:3px}
 .addv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
 .note{font-size:13px;color:var(--muted);margin:8px 0 0}
 .savebar{position:sticky;bottom:0;z-index:5;background:var(--bg);box-shadow:0 -6px 12px -8px rgba(0,0,0,.25);border-top:1px solid var(--line);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
@@ -134,31 +176,35 @@ textarea{resize:vertical;min-height:90px}
 .banner b{display:block;margin-bottom:4px}
 
 /* Detalle */
-dialog{border:0;padding:0;max-width:min(920px,calc(100vw - 24px));width:100%;max-height:calc(100dvh - 24px);border-radius:14px;background:var(--surface);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.35)}
-dialog::backdrop{background:rgba(6,18,13,.62)}
-.dhead{display:grid;grid-template-columns:260px minmax(0,1fr);background:var(--pitch);color:var(--chalk);position:relative}
-@media (max-width:640px){.dhead{grid-template-columns:1fr}.dhead .photo{max-height:360px;aspect-ratio:auto;height:360px}}
-.dhead .photo{border-radius:0}
-.dinfo{padding:22px 22px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.dinfo .pname{font-size:clamp(30px,5vw,44px)}
-.dinfo .apodo{font-family:var(--f-data);font-size:18px;color:var(--accent);letter-spacing:.04em}
-.dinfo .pmeta{color:color-mix(in srgb,var(--chalk) 75%,transparent)}
-.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px 18px;margin-top:6px}
-.kv div span{display:block;font-family:var(--f-data);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--chalk) 60%,transparent)}
-.kv div b{font-family:var(--f-data);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
-.closex{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:20px;cursor:pointer;line-height:1}
-.dbody{padding:20px 22px 26px;display:grid;gap:24px}
-.dbody h3{font-family:var(--f-display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:10px}
+dialog{border:0;padding:0;max-width:min(940px,calc(100vw - 24px));width:100%;max-height:calc(100dvh - 24px);border-radius:8px;background:var(--surface);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(5,10,20,.7)}
+.dhead{display:grid;grid-template-columns:270px minmax(0,1fr);background:var(--band);color:var(--on-band);position:relative;overflow:hidden}
+.dhead::after{content:"";position:absolute;inset:0 0 0 auto;width:40%;pointer-events:none;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.04) 22px 44px)}
+@media (max-width:640px){.dhead{grid-template-columns:1fr}.dhead .photo{aspect-ratio:auto;height:340px}}
+.dhead .photo .shade,.dhead .photo .on,.dhead .photo .pos{display:none}
+.dinfo{padding:22px 22px 20px;display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;z-index:1}
+.dinfo .dname{font-family:var(--f-display);font-style:italic;font-weight:900;font-size:clamp(32px,5vw,48px);line-height:.95;text-transform:uppercase}
+.dinfo .apodo{font-family:var(--f-display);font-style:italic;font-weight:700;font-size:19px;color:var(--accent);letter-spacing:.03em}
+.dinfo .pmeta{color:var(--on-band-dim)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));margin-top:8px;border:1px solid rgba(255,255,255,.12);border-radius:4px;overflow:hidden}
+.kv div{padding:8px 12px;border-right:1px solid rgba(255,255,255,.12)}
+.kv div:last-child{border-right:0}
+.kv span{display:block;font-family:var(--f-display);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--on-band-dim)}
+.kv b{font-family:var(--f-display);font-weight:700;font-size:21px;font-variant-numeric:tabular-nums}
+@media (max-width:520px){.kv{grid-template-columns:repeat(2,1fr)}.kv div{border-bottom:1px solid rgba(255,255,255,.12)}}
+.closex{position:absolute;right:10px;top:10px;z-index:2;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;cursor:pointer;line-height:1}
+.dbody{padding:20px 22px 26px;display:grid;gap:26px}
+.dbody h3{font-family:var(--f-display);font-style:italic;font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:10px}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.stats div{padding:12px 14px;border-right:1px solid var(--line)}
+.stats div{padding:12px 14px;border-right:1px solid var(--line);background:var(--surface-2)}
 .stats div:last-child{border-right:0}
-.stats b{display:block;font-family:var(--f-display);font-weight:800;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
-.stats span{font-family:var(--f-data);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stats b{display:block;font-family:var(--f-display);font-style:italic;font-weight:900;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.stats span{font-family:var(--f-display);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}.stats div:nth-child(2){border-right:0}.stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
 .timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .timeline li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
 .timeline li:last-child{border-bottom:0}
-.timeline .yrs{font-family:var(--f-data);font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.timeline .yrs{font-family:var(--f-display);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;color:var(--muted)}
 .timeline .club{font-weight:700}
 .timeline .cat{font-size:13px;color:var(--muted)}
 .vids{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
@@ -166,45 +212,33 @@ dialog::backdrop{background:rgba(6,18,13,.62)}
 .vid video{width:100%;display:block;background:#000;aspect-ratio:16/9;max-width:100%}
 .vid .vt{padding:8px 12px;font-weight:600;font-size:14px}
 .vlink{display:flex;gap:12px;align-items:center;padding:14px;text-decoration:none;color:inherit}
-.vlink .play{width:44px;height:44px;border-radius:50%;background:var(--pitch-2);display:grid;place-items:center;flex:none}
-.vlink .play::after{content:"";border-left:14px solid var(--chalk);border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
+.vlink .play{width:44px;height:44px;border-radius:50%;background:var(--accent);display:grid;place-items:center;flex:none}
+.vlink .play::after{content:"";border-left:14px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
 .vlink small{display:block;color:var(--muted);word-break:break-all}
 .traits{display:flex;flex-wrap:wrap;gap:8px}
-.traits span{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:14px}
+.traits span{background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:4px 12px;font-size:14px}
 .bio{max-width:65ch;margin:0;white-space:pre-line}
 .contact{display:flex;flex-direction:column;gap:8px}
-.cline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.cline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:4px}
 .cline .lbl{width:84px}
-.cline code{font-family:var(--f-data);font-size:17px;font-weight:600;user-select:all;flex:1;min-width:0;word-break:break-all}
+.cline code{font-family:var(--f-display);font-size:18px;font-weight:600;user-select:all;flex:1;min-width:0;word-break:break-all}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
 @media (max-width:700px){.two{grid-template-columns:1fr}}
 .loading{color:var(--muted);padding:20px 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-html{-webkit-text-size-adjust:100%}
-body{margin:0}
-img{max-width:100%}
-[hidden]{display:none!important}
-.testbar{background:#b3362b;color:#fff;font-size:14px}
-.testbar .wrap{padding-block:8px}
-.demobar{background:var(--accent);color:var(--accent-ink);font-size:14px}
-.demobar .wrap{display:flex;gap:10px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:8px}
-.demobar .demo-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.demobar .btn{background:var(--surface);color:var(--ink)}
 </style>
 </head>
 <body>
 
-
-<header class="pitch">
+<header class="band">
   <div class="wrap">
     <div class="brand">
-      <h1>Fichaje <span>Abierto</span></h1>
-      <p>La vitrina del fútbol amateur. Los jugadores cargan su ficha, los clubes buscan refuerzos.</p>
+      <div class="logo"><i class="slash" aria-hidden="true"></i>Fichaje <span>Abierto</span></div>
+      <p>La vitrina del deporte amateur. Los jugadores muestran su ficha, los clubes encuentran refuerzos.</p>
     </div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
-      <button class="tab" role="tab" id="tab-explorar" data-view="explorar">Buscar jugadores</button>
-      <button class="tab" role="tab" id="tab-mi-ficha" data-view="mi-ficha">Mi ficha</button>
+      <button class="tab" role="tab" id="tab-explorar" data-view="explorar"><span>Buscar jugadores</span></button>
+      <button class="tab" role="tab" id="tab-mi-ficha" data-view="mi-ficha"><span>Mi ficha</span></button>
     </nav>
   </div>
 </header>
@@ -212,13 +246,13 @@ img{max-width:100%}
 <main>
   <div class="wrap">
     <section id="view-explorar" aria-labelledby="tab-explorar">
+      <div class="sportbar" id="sportbar" role="group" aria-label="Deporte"></div>
       <div class="filters">
         <label class="fld f-q"><span class="lbl">Buscar</span><input type="text" id="f-q" placeholder="Nombre, ciudad, club…"></label>
-        <label class="fld" id="f-dep-wrap" hidden><span class="lbl">Deporte</span><select id="f-dep"></select></label>
         <label class="fld"><span class="lbl">Posición</span><select id="f-pos"></select></label>
         <label class="fld"><span class="lbl">País</span><select id="f-pais"></select></label>
         <label class="fld" id="f-prov-wrap"><span class="lbl">Provincia</span><select id="f-prov"></select></label>
-        <label class="fld"><span class="lbl">Pie hábil</span><select id="f-pie"><option value="">Todos</option><option value="derecho">Derecho</option><option value="izquierdo">Izquierdo</option><option value="ambidiestro">Ambidiestro</option></select></label>
+        <label class="fld"><span class="lbl" id="f-lado-lbl">Pie hábil</span><select id="f-lado"><option value="">Todos</option><option value="derecho">Derecho</option><option value="izquierdo">Izquierdo</option><option value="ambidiestro">Ambidiestro</option></select></label>
         <label class="chk"><input type="checkbox" id="f-libres"> Solo libres</label>
         <label class="chk"><input type="checkbox" id="f-ue"> Pasaporte UE</label>
       </div>
@@ -237,20 +271,51 @@ img{max-width:100%}
 <script>
 (() => {
 "use strict";
-/* Deportes: fútbol es el principal. Para sumar otro, agregá una entrada en SPORTS con sus posiciones, cualidades, categorías y etiquetas de estadísticas. El selector de deporte aparece solo cuando hay más de uno. */
+
+/* ---------- deportes ----------
+   Cada deporte tiene sus posiciones, cualidades, categorías y estadísticas.
+   Un deporte aparece en la cinta de "Buscar" cuando hay al menos una ficha publicada de ese deporte
+   (fútbol siempre está). Para sumar un deporte nuevo, agregá una entrada acá. */
+const CAT_GEN = ["Liga regional","Primera local","Federación provincial","Liga nacional","Inferiores / juveniles","Universitario","Otro"];
 const SPORTS = {
-  futbol: { nombre: "Fútbol",
-    posiciones: [
-  ["ARQ","Arquero"],["DFC","Defensor central"],["LD","Lateral derecho"],["LI","Lateral izquierdo"],
-  ["MCD","Volante central (5)"],["MC","Mediocampista mixto"],["MO","Enganche (10)"],
-  ["ED","Extremo derecho"],["EI","Extremo izquierdo"],["DC","Delantero centro (9)"]],
-    categorias: ["Liga regional","Primera local","Reserva","Inferiores","Torneo Federal","Universitario","Futsal / Fútbol 5","Otro"],
-    cualidades: ["Velocidad","Juego aéreo","Pegada","Gambeta","Visión de juego","Marca","Resistencia","Pelota parada","Liderazgo","Atajadas","Juego con los pies","Cabezazo","Pase largo","Definición"],
-    stats: ["Partidos","Goles","Asistencias","Títulos"] }
+  futbol: { nombre:"Fútbol", lado:"Pie hábil", arq:"ARQ",
+    posiciones:[["ARQ","Arquero"],["DFC","Defensor central"],["LD","Lateral derecho"],["LI","Lateral izquierdo"],["MCD","Volante central (5)"],["MC","Mediocampista mixto"],["MO","Enganche (10)"],["ED","Extremo derecho"],["EI","Extremo izquierdo"],["DC","Delantero centro (9)"]],
+    cualidades:["Velocidad","Juego aéreo","Pegada","Gambeta","Visión de juego","Marca","Resistencia","Pelota parada","Liderazgo","Atajadas","Juego con los pies","Cabezazo","Pase largo","Definición"],
+    categorias:["Liga regional","Primera local","Reserva","Inferiores","Torneo Federal","Universitario","Otro"],
+    stats:["Partidos","Goles","Asistencias","Títulos"], statsArq:"Vallas invictas" },
+  futsal: { nombre:"Futsal", lado:"Pie hábil", arq:"ARQ",
+    posiciones:[["ARQ","Arquero"],["CIE","Cierre"],["ALD","Ala derecho"],["ALI","Ala izquierdo"],["PIV","Pívot"],["UNI","Universal"]],
+    cualidades:["Velocidad","Gambeta","Pase","Remate","Marca","Juego de espaldas","Resistencia","Atajadas","Juego con los pies","Lectura de juego"],
+    categorias:CAT_GEN, stats:["Partidos","Goles","Asistencias","Títulos"], statsArq:"Vallas invictas" },
+  basquet: { nombre:"Básquet", lado:"Mano hábil",
+    posiciones:[["BAS","Base"],["ESC","Escolta"],["ALE","Alero"],["AP","Ala-pívot"],["PIV","Pívot"]],
+    cualidades:["Tiro exterior","Penetración","Pase","Rebote","Defensa","Velocidad","Salto","Juego en el poste","Liderazgo","Tiro libre"],
+    categorias:CAT_GEN, stats:["Partidos","Puntos","Asistencias","Rebotes"] },
+  voley: { nombre:"Vóley", lado:"Mano hábil",
+    posiciones:[["ARM","Armador"],["OPU","Opuesto"],["CEN","Central"],["PUN","Punta receptor"],["LIB","Líbero"]],
+    cualidades:["Saque","Recepción","Ataque","Bloqueo","Defensa","Armado","Salto","Lectura de juego","Liderazgo"],
+    categorias:CAT_GEN, stats:["Partidos","Puntos","Aces","Bloqueos"] },
+  hockey: { nombre:"Hockey", lado:"Perfil hábil", arq:"ARQ",
+    posiciones:[["ARQ","Arquero/a"],["DEF","Defensor/a"],["VOL","Volante"],["DEL","Delantero/a"]],
+    cualidades:["Velocidad","Control","Pase","Definición","Marca","Córner corto","Resistencia","Atajadas","Lectura de juego"],
+    categorias:CAT_GEN, stats:["Partidos","Goles","Asistencias","Títulos"], statsArq:"Vallas invictas" },
+  rugby: { nombre:"Rugby", lado:"Pie hábil",
+    posiciones:[["PIL","Pilar"],["HK","Hooker"],["SL","Segunda línea"],["ALA","Ala"],["OCT","Octavo"],["MS","Medio scrum"],["APE","Apertura"],["CEN","Centro"],["WIN","Wing"],["FB","Fullback"]],
+    cualidades:["Tackle","Scrum","Line","Velocidad","Pase","Patada","Potencia","Resistencia","Lectura de juego","Liderazgo"],
+    categorias:CAT_GEN, stats:["Partidos","Tries","Tackles","Títulos"] },
+  handball: { nombre:"Handball", lado:"Mano hábil", arq:"ARQ",
+    posiciones:[["ARQ","Arquero"],["CEN","Central"],["LAI","Lateral izquierdo"],["LAD","Lateral derecho"],["EXI","Extremo izquierdo"],["EXD","Extremo derecho"],["PIV","Pivote"]],
+    cualidades:["Lanzamiento","Velocidad","Pase","Defensa","Salto","Fintas","Contraataque","Atajadas","Lectura de juego"],
+    categorias:CAT_GEN, stats:["Partidos","Goles","Asistencias","Títulos"], statsArq:"Atajadas" }
 };
-const DEPORTE = "futbol";
-const POS = SPORTS[DEPORTE].posiciones;
-const POSMAP = Object.fromEntries(POS);
+const SPORT_KEYS = Object.keys(SPORTS);
+for (const k of SPORT_KEYS) SPORTS[k].posMap = Object.fromEntries(SPORTS[k].posiciones);
+const sportOf = p => SPORTS[p && p.deporte] ? p.deporte : "futbol";
+const SP = p => SPORTS[sportOf(p)];
+const posName = p => SP(p).posMap[p.posicion] || "";
+const statLabels = p => { const s = SP(p); const l = s.stats.slice(); if (s.statsArq && p.posicion === s.arq) l[3] = s.statsArq; return l; };
+
+/* ---------- países ---------- */
 const PROV = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
 const ISO = new Set("AF,AL,DE,AD,AO,AG,SA,DZ,AR,AM,AU,AT,AZ,BS,BD,BB,BH,BE,BZ,BJ,BY,BO,BA,BW,BR,BN,BG,BF,BI,BT,CV,KH,CM,CA,QA,TD,CL,CN,CY,CO,KM,CG,CD,KP,KR,CI,CR,HR,CU,DK,DM,EC,EG,SV,AE,ER,SK,SI,ES,US,EE,SZ,ET,PH,FI,FJ,FR,GA,GM,GE,GH,GD,GR,GT,GN,GQ,GW,GY,HT,HN,HK,HU,IN,ID,IQ,IR,IE,IS,MH,SB,IL,IT,JM,JP,JO,KZ,KE,KG,KI,XK,KW,LA,LS,LV,LB,LR,LY,LI,LT,LU,MO,MK,MG,MY,MW,MV,ML,MT,MA,MU,MR,MX,FM,MD,MC,MN,ME,MZ,MM,NA,NR,NP,NI,NE,NG,NO,NZ,OM,NL,PK,PW,PS,PA,PG,PY,PE,PL,PT,PR,GB,CF,CZ,DO,RW,RO,RU,WS,KN,SM,VC,LC,ST,SN,RS,SC,SL,SG,SY,SO,LK,ZA,SD,SS,SE,CH,SR,TH,TW,TZ,TJ,TL,TG,TO,TT,TN,TM,TR,TV,UA,UG,UY,UZ,VU,VA,VE,VN,YE,DJ,ZM,ZW".split(","));
 const regionNames = (() => { try { return new Intl.DisplayNames(["es"], {type:"region"}); } catch { return null; } })();
@@ -259,16 +324,9 @@ const COUNTRIES = [["AR", cName("AR")]].concat([...ISO].filter(c => c !== "AR").
 const flag = c => ISO.has(c) ? String.fromCodePoint(...[...c].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) : "";
 const paisOf = p => ISO.has(p.pais) ? p.pais : (p.provincia === "Fuera de Argentina" ? "" : "AR");
 const natName = v => ISO.has(v) ? cName(v) : String(v || "");
-const placeOf = p => { const c = paisOf(p); const parts = [p.ciudad, p.provincia === "Fuera de Argentina" ? "" : p.provincia].filter(Boolean); if (c && c !== "AR") parts.push(cName(c)); return parts.length ? (c ? flag(c) + " " : "") + parts.join(", ") : ""; };
 const natCode = v => { if (ISO.has(v)) return v; const t = String(v || "").trim().toLowerCase(); const hit = COUNTRIES.find(([,n]) => n.toLowerCase() === t); return hit ? hit[0] : ""; };
-const countryOpts = (val, ph) => `<option value="">${ph}</option>` + COUNTRIES.map(([k,v]) => `<option value="${k}"${k===val?" selected":""}>${esc(v)}</option>`).join("");
-function provFieldHTML(D){
-  return D.pais === "AR"
-    ? `<label class="fld"><span class="lbl">Provincia</span><select id="i-prov" data-k="provincia"><option value="">Elegí…</option>${PROV.map(p => `<option${p===D.provincia?" selected":""}>${esc(p)}</option>`).join("")}</select></label>`
-    : `<label class="fld"><span class="lbl">Provincia / estado / región</span><input type="text" id="i-prov" data-k="provincia" maxlength="50" value="${esc(D.provincia)}"></label>`;
-}
-const CATS = SPORTS[DEPORTE].categorias;
-const TRAITS = SPORTS[DEPORTE].cualidades;
+const placeOf = p => { const c = paisOf(p); const parts = [p.ciudad, p.provincia === "Fuera de Argentina" ? "" : p.provincia].filter(Boolean); if (c && c !== "AR") parts.push(cName(c)); return parts.length ? (c ? flag(c) + " " : "") + parts.join(", ") : ""; };
+
 const DISP = {libre:"Libre ahora", abierto:"Con club · escucha ofertas", prueba:"Disponible para pruebas"};
 const MAX_VIDEOS = 6;
 
@@ -276,20 +334,60 @@ const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safeUrl = u => { try { const x = new URL(String(u)); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch { return ""; } };
 const assetId = v => (typeof v === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(v)) ? v : "";
-const num = v => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : null; };
+const num = v => { if (v === "" || v == null) return null; const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : null; };
 const age = d => { if (!d) return null; const b = new Date(d); if (isNaN(b)) return null; const n = new Date(); let a = n.getFullYear()-b.getFullYear(); const m = n.getMonth()-b.getMonth(); if (m<0 || (m===0 && n.getDate()<b.getDate())) a--; return a>=0 && a<90 ? a : null; };
 const initials = n => String(n||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase() || "?";
+const countryOpts = (val, ph) => `<option value="">${ph}</option>` + COUNTRIES.map(([k,v]) => `<option value="${k}"${k===val?" selected":""}>${esc(v)}</option>`).join("");
+const opts = (pairs, val, ph) => `<option value="">${ph}</option>` + pairs.map(([k,v]) => `<option value="${esc(k)}"${k===val?" selected":""}>${esc(v)}</option>`).join("");
 
-const S = { db:null, user:null, assets:null, uid:null, canWrite:null, players:[], loaded:false, ready:false, mineLoaded:false, myDoc:null, draft:null, dirty:false };
+/* ---------- almacenamiento demo (este navegador) ---------- */
+const LS_KEY = "fa_players_v1", urls = new Map();
+const blobSrc = id => urls.get(id) || "";
+let idb = null;
+function openIDB(){ return new Promise(res => { try { const r = indexedDB.open("fichaje-abierto", 1); r.onupgradeneeded = () => r.result.createObjectStore("blobs"); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+function idbAll(){ return new Promise(res => { if (!idb) return res([]); const out = []; try { const c = idb.transaction("blobs").objectStore("blobs").openCursor(); c.onsuccess = () => { const cur = c.result; if (cur){ out.push([cur.key, cur.value]); cur.continue(); } else res(out); }; c.onerror = () => res(out); } catch { res(out); } }); }
+function idbPut(id, blob){ return new Promise((res, rej) => { if (!idb) return rej({code:"capability_disabled"}); const t = idb.transaction("blobs","readwrite"); t.objectStore("blobs").put(blob, id); t.oncomplete = res; t.onerror = () => rej({code:"quota_or_state"}); }); }
+function idbClear(){ return new Promise(res => { if (!idb) return res(); const t = idb.transaction("blobs","readwrite"); t.objectStore("blobs").clear(); t.oncomplete = res; t.onerror = res; }); }
+let memStore = {};
+const readAll = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch { return memStore; } };
+const writeAll = o => { try { localStorage.setItem(LS_KEY, JSON.stringify(o)); return true; } catch { memStore = o; return true; } };
+const listeners = new Set();
+const snap = () => Object.entries(readAll()).sort((a,b)=>(b[1].actualizado||0)-(a[1].actualizado||0)).map(([id,d]) => Object.assign({}, d, {_id:id}));
+const emit = () => { const s = snap(); listeners.forEach(fn => fn(s)); };
+addEventListener("storage", e => { if (e.key === LS_KEY) emit(); });
+const store = {
+  subscribe(fn){ listeners.add(fn); setTimeout(() => fn(snap())); },
+  get(id){ return readAll()[id] || null; },
+  set(id, data){ const all = readAll(); all[id] = data; writeAll(all); emit(); },
+  del(id){ const all = readAll(); delete all[id]; writeAll(all); emit(); }
+};
+const uploader = { async upload(blob){ const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,"0")).join(""); await idbPut(id, blob); const url = URL.createObjectURL(blob); urls.set(id, url); return {id, url}; } };
 
-/* ---------- filtros ---------- */
-$("#f-pos").innerHTML = `<option value="">Todas</option>` + POS.map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("");
-$("#f-dep").innerHTML = Object.entries(SPORTS).map(([k,v])=>`<option value="${k}">${esc(v.nombre)}</option>`).join("");
-$("#f-dep-wrap").hidden = Object.keys(SPORTS).length < 2;
-$("#f-pais").innerHTML = countryOpts("", "Todos");
-$("#f-pais").addEventListener("input", () => { const ar = !$("#f-pais").value || $("#f-pais").value === "AR"; $("#f-prov-wrap").hidden = !ar; if (!ar) $("#f-prov").value = ""; });
-$("#f-prov").innerHTML = `<option value="">Todas</option>` + PROV.map(p=>`<option>${esc(p)}</option>`).join("");
-["#f-q","#f-dep","#f-pos","#f-prov","#f-pie","#f-libres","#f-pais","#f-ue"].forEach(s => $(s).addEventListener("input", renderGrid));
+const ME = "yo";
+const S = { players:[], loaded:false, myDoc:null, draft:null, sport:"futbol", assets:null };
+try { const s = localStorage.getItem("fa_sport"); if (SPORTS[s]) S.sport = s; } catch {}
+
+/* ---------- avisos superiores ---------- */
+function topBars(){
+  const bars = [];
+  if (/pruebas/i.test(location.hostname) || window.FA_PRUEBAS) bars.push(`<div class="testbar"><div class="wrap"><span><b>SITIO DE PRUEBAS.</b> Acá ves los cambios antes de publicarlos. El sitio oficial todavía no cambió.</span></div></div>`);
+  bars.push(`<div class="demobar"><div class="wrap"><span><b>Modo demo.</b> Las fichas, fotos y videos se guardan solo en este navegador.</span><span class="demo-act"><button type="button" class="btn sm" id="demo-seed">Cargar jugadores de ejemplo</button><span id="demo-reset-zone"><button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button></span></span></div></div>`);
+  document.body.insertAdjacentHTML("afterbegin", bars.join(""));
+  document.body.addEventListener("click", async e => {
+    const id = e.target.id;
+    if (id === "demo-seed"){ const all = readAll(); EJEMPLOS.forEach((p,i) => { all["ejemplo-"+(i+1)] = Object.assign({}, p, {actualizado: Date.now()-i*1000}); }); writeAll(all); emit(); location.hash = "explorar"; }
+    if (id === "demo-reset") $("#demo-reset-zone").innerHTML = `¿Borrar todas las fichas de este navegador? <button type="button" class="btn sm danger" id="demo-yes">Sí, borrar</button> <button type="button" class="btn sm" id="demo-no">No</button>`;
+    if (id === "demo-no") $("#demo-reset-zone").innerHTML = `<button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button>`;
+    if (id === "demo-yes"){ writeAll({}); await idbClear(); urls.clear(); S.myDoc = null; S.draft = null; emit(); $("#demo-reset-zone").innerHTML = `<button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button>`; if (location.hash === "#mi-ficha") renderMine(); }
+  });
+}
+const EJ = {foto:"", videos:[], contacto:{telefono:"",email:"",instagram:""}, publicado:true, bio:"Jugador de ejemplo para probar la app."};
+const EJEMPLOS = [
+  Object.assign({}, EJ, {deporte:"futbol", nombre:"Matías Correa (ejemplo)", apodo:"Mati", fechaNac:"2001-04-12", nacionalidad:"AR", pais:"AR", ciudad:"9 de Julio", provincia:"Buenos Aires", dorsal:9, posicion:"DC", posSec:["EI"], lado:"derecho", altura:181, peso:77, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:24, goles:17, asistencias:5, vallas:1}, trayectoria:[{club:"Club Atlético Ejemplo", categoria:"Liga regional", desde:2022, hasta:2025, logros:"Goleador del Apertura"}], cualidades:["Definición","Juego aéreo","Velocidad"], videos:[{tipo:"link", url:"https://www.youtube.com/", titulo:"Goles 2025 (link de ejemplo)"}]}),
+  Object.assign({}, EJ, {deporte:"futbol", nombre:"Lucas Benítez (ejemplo)", fechaNac:"1998-09-03", nacionalidad:"AR", pais:"AR", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], lado:"derecho", altura:189, peso:84, clubActual:"Sportivo Ejemplo", disponibilidad:"abierto", temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"]}),
+  Object.assign({}, EJ, {deporte:"futbol", nombre:"Tomás Ríos (ejemplo)", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"AR", nacionalidad2:"IT", pasaporteUE:true, pais:"AR", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], lado:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"]}),
+  Object.assign({}, EJ, {deporte:"basquet", nombre:"Nicolás Ferreyra (ejemplo)", apodo:"Nico", fechaNac:"2000-06-30", nacionalidad:"AR", pais:"AR", ciudad:"Bahía Blanca", provincia:"Buenos Aires", dorsal:7, posicion:"BAS", posSec:["ESC"], lado:"derecho", altura:184, peso:80, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:22, goles:14.5, asistencias:6, vallas:3}, trayectoria:[{club:"Club Ejemplo Básquet", categoria:"Federación provincial", desde:2019, hasta:2025, logros:"Subcampeón provincial"}], cualidades:["Pase","Tiro exterior","Liderazgo"], bio:"Jugador de ejemplo. Promedios por partido."})
+];
 
 /* ---------- rutas ---------- */
 function route(){
@@ -297,90 +395,118 @@ function route(){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   $("#view-explorar").hidden = v !== "explorar";
   $("#view-mi-ficha").hidden = v !== "mi-ficha";
-  if (v === "mi-ficha") renderMine();
+  if (v === "mi-ficha") renderMine(); else { syncSportFilters(); renderGrid(); }
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { location.hash = t.dataset.view; }));
 addEventListener("hashchange", route);
 
+/* ---------- cinta de deportes y filtros ---------- */
+function published(){ return S.players.filter(p => p.publicado && p.nombre); }
+function renderSportBar(){
+  const counts = {}; for (const p of published()) { const k = sportOf(p); counts[k] = (counts[k]||0) + 1; }
+  const shown = SPORT_KEYS.filter(k => k === "futbol" || counts[k] || k === S.sport);
+  if (!shown.includes(S.sport)) S.sport = "futbol";
+  const bar = $("#sportbar");
+  if (shown.length < 2){ bar.hidden = true; return; }
+  bar.hidden = false;
+  let seen = []; try { seen = JSON.parse(localStorage.getItem("fa_seen_sports") || "[]"); } catch {}
+  bar.innerHTML = `<span class="lbl">Deporte</span>` + shown.map(k => `<button type="button" class="sport${!seen.includes(k) && k !== "futbol" ? " new" : ""}" data-sport="${k}" aria-pressed="${k === S.sport}"><span>${esc(SPORTS[k].nombre)}<small>${counts[k] || 0}</small></span></button>`).join("");
+}
+$("#sportbar").addEventListener("click", e => {
+  const b = e.target.closest("[data-sport]"); if (!b) return;
+  S.sport = b.dataset.sport;
+  try { localStorage.setItem("fa_sport", S.sport); const seen = JSON.parse(localStorage.getItem("fa_seen_sports") || "[]"); if (!seen.includes(S.sport)){ seen.push(S.sport); localStorage.setItem("fa_seen_sports", JSON.stringify(seen)); } } catch {}
+  syncSportFilters(); renderGrid();
+});
+function syncSportFilters(){
+  const s = SPORTS[S.sport];
+  $("#f-pos").innerHTML = opts(s.posiciones, "", "Todas");
+  $("#f-lado-lbl").textContent = s.lado;
+}
+$("#f-pais").innerHTML = countryOpts("", "Todos");
+$("#f-prov").innerHTML = `<option value="">Todas</option>` + PROV.map(p=>`<option>${esc(p)}</option>`).join("");
+$("#f-pais").addEventListener("input", () => { const ar = !$("#f-pais").value || $("#f-pais").value === "AR"; $("#f-prov-wrap").hidden = !ar; if (!ar) $("#f-prov").value = ""; });
+["#f-q","#f-pos","#f-pais","#f-prov","#f-lado","#f-libres","#f-ue"].forEach(s => $(s).addEventListener("input", renderGrid));
+syncSportFilters();
+
 /* ---------- tarjeta ---------- */
-function photoHTML(p){
-  const id = assetId(p.foto);
-  return `<div class="photo"><div class="ph" aria-hidden="true">${esc(initials(p.nombre))}</div>${id ? `<img src="${blobSrc(id)}" alt="" loading="lazy" onerror="this.remove()">` : ""}${num(p.dorsal)!==null && p.dorsal!=="" ? `<div class="dorsal">${esc(p.dorsal)}</div>` : ""}${POSMAP[p.posicion] ? `<div class="pos" title="${esc(POSMAP[p.posicion])}">${esc(p.posicion)}</div>` : ""}</div>`;
+function photoHTML(p, withName){
+  const id = assetId(p.foto), src = id ? blobSrc(id) : "";
+  const pn = posName(p);
+  return `<div class="photo"><div class="ph" aria-hidden="true">${esc(initials(p.nombre))}</div>${src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+    ${num(p.dorsal) !== null ? `<div class="dorsal" aria-label="Dorsal ${esc(p.dorsal)}">${esc(p.dorsal)}</div>` : ""}
+    ${pn ? `<div class="pos" title="${esc(pn)}"><b>${esc(p.posicion)}</b></div>` : ""}
+    ${withName ? `<div class="shade"></div><div class="on"><div class="pname">${esc(p.nombre || "Tu nombre")}</div><div class="pmeta">${esc(pn || "Posición")}</div></div>` : ""}</div>`;
 }
 function cardHTML(p, asButton = true){
-  const a = age(p.fechaNac);
-  const tag = asButton ? "button" : "div";
-  return `<${tag} class="pcard" ${asButton?`type="button" data-id="${esc(p._id)}"`:""}>
-    ${photoHTML(p)}
+  const a = age(p.fechaNac), tag = asButton ? "button" : "div";
+  return `<${tag} class="pcard" ${asButton ? `type="button" data-id="${esc(p._id)}"` : ""}>
+    ${photoHTML(p, true)}
     <div class="pbody">
-      <div class="pname">${esc(p.nombre || "Tu nombre")}</div>
-      <div class="pmeta">${esc(POSMAP[p.posicion] || "Posición")} · ${esc(placeOf(p) || "Ciudad")}</div>
+      <div class="sporttag">${esc(placeOf(p) || "Ciudad")}</div>
       ${DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}">${esc(DISP[p.disponibilidad])}</div>` : ""}
       <div class="specs">
         <div><span>Edad</span><b>${a ?? "–"}</b></div>
-        <div><span>Altura</span><b>${num(p.altura) ? (p.altura/100).toFixed(2)+" m" : "–"}</b></div>
-        <div><span>Pie</span><b>${esc(p.pie ? p.pie.slice(0,3).toUpperCase() : "–")}</b></div>
+        <div><span>Altura</span><b>${num(p.altura) ? (p.altura/100).toFixed(2) : "–"}</b></div>
+        <div><span>${esc(SP(p).lado.split(" ")[0])}</span><b>${esc(p.lado ? p.lado.slice(0,3).toUpperCase() : "–")}</b></div>
       </div>
     </div></${tag}>`;
 }
 
-/* ---------- explorar ---------- */
+/* ---------- buscar ---------- */
 function renderGrid(){
   const grid = $("#grid"), count = $("#count");
-  if (!S.ready){ count.textContent = "Cargando fichas…"; return; }
-  if (!S.db){
-    count.textContent = "";
-    grid.innerHTML = `<div class="empty"><h2>Fichas no disponibles</h2><p>Para ver las fichas tenés que abrir esta página con tu cuenta iniciada.</p></div>`;
-    return;
-  }
   if (!S.loaded){ count.textContent = "Cargando fichas…"; return; }
-  const q = $("#f-q").value.trim().toLowerCase(), pais = $("#f-pais").value, ue = $("#f-ue").checked, pos = $("#f-pos").value, prov = $("#f-prov").value, pie = $("#f-pie").value, libres = $("#f-libres").checked;
-  const dep = $("#f-dep").value || DEPORTE;
-  const all = S.players.filter(p => p.publicado && p.nombre && (p.deporte || "futbol") === dep);
+  renderSportBar();
+  const q = $("#f-q").value.trim().toLowerCase(), pos = $("#f-pos").value, pais = $("#f-pais").value, prov = $("#f-prov").value, lado = $("#f-lado").value, libres = $("#f-libres").checked, ue = $("#f-ue").checked;
+  const all = published().filter(p => sportOf(p) === S.sport);
   const list = all.filter(p =>
     (!pos || p.posicion === pos || (Array.isArray(p.posSec) && p.posSec.includes(pos))) &&
-    (!pais || paisOf(p) === pais) && (!prov || p.provincia === prov) && (!ue || p.pasaporteUE === true) && (!pie || p.pie === pie) && (!libres || p.disponibilidad === "libre") &&
+    (!pais || paisOf(p) === pais) && (!prov || p.provincia === prov) && (!lado || p.lado === lado) &&
+    (!libres || p.disponibilidad === "libre") && (!ue || p.pasaporteUE === true) &&
     (!q || [p.nombre,p.apodo,p.ciudad,p.provincia,p.clubActual,cName(paisOf(p)||"")].join(" ").toLowerCase().includes(q)));
+  const sn = SPORTS[S.sport].nombre;
   if (!all.length){
-    count.textContent = "0 jugadores";
-    grid.innerHTML = `<div class="empty"><h2>Todavía no hay fichas publicadas</h2><p>Acá van a aparecer los jugadores con su foto, posición, trayectoria y videos. Si jugás, cargá tu ficha y sé el primero que ven los clubes.</p><a class="btn primary" href="#mi-ficha">Cargar mi ficha</a></div>`;
+    count.textContent = `${sn} · 0 jugadores`;
+    grid.innerHTML = `<div class="empty"><h2>Todavía no hay fichas de ${esc(sn.toLowerCase())}</h2><p>Acá van a aparecer los jugadores con su foto, posición, trayectoria y videos. Si jugás, cargá tu ficha y sé el primero que ven los clubes.</p><a class="btn primary" href="#mi-ficha">Cargar mi ficha</a></div>`;
     return;
   }
-  count.textContent = `${list.length} de ${all.length} jugador${all.length===1?"":"es"}`;
+  count.textContent = `${sn} · ${list.length} de ${all.length} jugador${all.length===1?"":"es"}`;
   grid.innerHTML = list.length ? `<div class="grid">${list.map(p=>cardHTML(p)).join("")}</div>`
-    : `<div class="empty"><h2>Sin resultados</h2><p>Ningún jugador coincide con esos filtros. Probá ampliar la posición o la provincia.</p></div>`;
+    : `<div class="empty"><h2>Sin resultados</h2><p>Ningún jugador coincide con esos filtros. Probá ampliar la posición o el país.</p></div>`;
 }
 $("#grid").addEventListener("click", e => {
   const b = e.target.closest(".pcard[data-id]"); if (!b) return;
   const p = S.players.find(x => x._id === b.dataset.id); if (p) openDetail(p);
 });
 
-/* ---------- detalle ---------- */
+/* ---------- perfil ---------- */
 function openDetail(p){
-  const d = $("#detail"), a = age(p.fechaNac);
-  const st = p.stats || {};
+  const d = $("#detail"), a = age(p.fechaNac), sp = SP(p), st = p.stats || {}, L = statLabels(p);
   const traj = (Array.isArray(p.trayectoria) ? p.trayectoria : []).filter(t => t && t.club);
   const vids = (Array.isArray(p.videos) ? p.videos : []).slice(0, MAX_VIDEOS);
-  const traits = (Array.isArray(p.cualidades) ? p.cualidades : []).filter(t => TRAITS.includes(t));
-  const sec = (Array.isArray(p.posSec) ? p.posSec : []).filter(k => POSMAP[k] && k !== p.posicion);
+  const traits = (Array.isArray(p.cualidades) ? p.cualidades : []).filter(t => sp.cualidades.includes(t));
+  const sec = (Array.isArray(p.posSec) ? p.posSec : []).filter(k => sp.posMap[k] && k !== p.posicion);
   const c = p.contacto || {};
   const phoneDigits = String(c.telefono||"").replace(/\D/g,"");
   const ig = String(c.instagram||"").replace(/^@/,"").replace(/[^A-Za-z0-9._]/g,"");
+  const nats = [natName(p.nacionalidad), natName(p.nacionalidad2)].filter(Boolean).join(" y ");
   d.innerHTML = `
     <div class="dhead">
-      ${photoHTML(p)}
+      ${photoHTML(p, false)}
       <div class="dinfo">
-        <div class="pname">${esc(p.nombre)}</div>
+        <div class="sporttag" style="color:var(--accent)">${esc(sp.nombre)}</div>
+        <div class="dname">${esc(p.nombre)}</div>
         ${p.apodo ? `<div class="apodo">"${esc(p.apodo)}"</div>` : ""}
-        <div class="pmeta">${esc(POSMAP[p.posicion] || "")}${sec.length ? " · también " + esc(sec.map(k=>POSMAP[k]).join(", ")) : ""}</div>
+        <div class="pmeta">${esc(posName(p))}${sec.length ? " · también " + esc(sec.map(k=>sp.posMap[k]).join(", ")) : ""}</div>
         <div class="pmeta">${esc(placeOf(p))}</div>
-        <div class="pmeta">${esc(["Nacionalidad: " + [natName(p.nacionalidad), natName(p.nacionalidad2)].filter(Boolean).join(" y "), p.pasaporteUE ? "Pasaporte UE" : ""].filter(x => x && x !== "Nacionalidad: ").join(" · "))}</div>
-        ${DISP[p.disponibilidad] ? `<div class="status st-${esc(p.disponibilidad)}" style="color:var(--accent)">${esc(DISP[p.disponibilidad])}</div>` : ""}
+        ${nats || p.pasaporteUE ? `<div class="pmeta">${esc([nats ? "Nacionalidad: " + nats : "", p.pasaporteUE ? "Pasaporte UE" : ""].filter(Boolean).join(" · "))}</div>` : ""}
+        ${DISP[p.disponibilidad] ? `<div class="status" style="color:var(--accent)">${esc(DISP[p.disponibilidad])}</div>` : ""}
         <div class="kv">
           <div><span>Edad</span><b>${a ?? "–"}</b></div>
           <div><span>Altura</span><b>${num(p.altura) ? esc(p.altura)+" cm" : "–"}</b></div>
           <div><span>Peso</span><b>${num(p.peso) ? esc(p.peso)+" kg" : "–"}</b></div>
-          <div><span>Pie hábil</span><b>${esc(p.pie || "–")}</b></div>
+          <div><span>${esc(sp.lado)}</span><b>${esc(p.lado || "–")}</b></div>
           <div><span>Club actual</span><b>${esc(p.clubActual || "Sin club")}</b></div>
         </div>
       </div>
@@ -390,16 +516,16 @@ function openDetail(p){
       <div>
         <h3>Última temporada${p.temporada ? " · " + esc(p.temporada) : ""}</h3>
         <div class="stats">
-          <div><b>${num(st.partidos) ?? "–"}</b><span>Partidos</span></div>
-          <div><b>${num(st.goles) ?? "–"}</b><span>Goles</span></div>
-          <div><b>${num(st.asistencias) ?? "–"}</b><span>Asistencias</span></div>
-          <div><b>${num(st.vallas) ?? "–"}</b><span>${p.posicion==="ARQ"?"Vallas invictas":"Títulos"}</span></div>
+          <div><b>${num(st.partidos) ?? "–"}</b><span>${esc(L[0])}</span></div>
+          <div><b>${num(st.goles) ?? "–"}</b><span>${esc(L[1])}</span></div>
+          <div><b>${num(st.asistencias) ?? "–"}</b><span>${esc(L[2])}</span></div>
+          <div><b>${num(st.vallas) ?? "–"}</b><span>${esc(L[3])}</span></div>
         </div>
       </div>
       ${vids.length ? `<div><h3>Videos</h3><div class="vids">${vids.map(videoHTML).join("")}</div></div>` : ""}
       <div class="two">
-        <div><h3>Trayectoria</h3>${traj.length ? `<ul class="timeline">${traj.map(t=>`<li><div class="yrs">${esc(t.desde||"?")}–${esc(t.hasta||"hoy")}</div><div><div class="club">${esc(t.club)}</div><div class="cat">${esc(t.categoria||"")}${t.logros?" · "+esc(t.logros):""}</div></div></li>`).join("")}</ul>` : `<p class="pmeta">Sin trayectoria cargada.</p>`}</div>
-        <div style="display:grid;gap:20px;align-content:start">
+        <div><h3>Trayectoria</h3>${traj.length ? `<ul class="timeline">${traj.map(t=>`<li><div class="yrs">${esc(t.desde||"?")}–${esc(t.hasta||"hoy")}</div><div><div class="club">${esc(t.club)}</div><div class="cat">${esc(t.categoria||"")}${t.logros?" · "+esc(t.logros):""}</div></div></li>`).join("")}</ul>` : `<p class="note">Sin trayectoria cargada.</p>`}</div>
+        <div style="display:grid;gap:22px;align-content:start">
           ${traits.length ? `<div><h3>Cualidades</h3><div class="traits">${traits.map(t=>`<span>${esc(t)}</span>`).join("")}</div></div>` : ""}
           ${p.bio ? `<div><h3>Sobre mí</h3><p class="bio">${esc(p.bio)}</p></div>` : ""}
         </div>
@@ -410,18 +536,17 @@ function openDetail(p){
           ${c.telefono ? `<div class="cline"><span class="lbl">Teléfono</span><code>${esc(c.telefono)}</code><button class="btn sm" data-copy="${esc(c.telefono)}">Copiar</button>${phoneDigits.length>=8?`<a class="btn sm" href="https://wa.me/${phoneDigits}" target="_blank" rel="noopener">WhatsApp</a>`:""}</div>` : ""}
           ${c.email ? `<div class="cline"><span class="lbl">Email</span><code>${esc(c.email)}</code><button class="btn sm" data-copy="${esc(c.email)}">Copiar</button></div>` : ""}
           ${ig ? `<div class="cline"><span class="lbl">Instagram</span><code>@${esc(ig)}</code><a class="btn sm" href="https://instagram.com/${esc(ig)}" target="_blank" rel="noopener">Abrir</a></div>` : ""}
-          ${!c.telefono && !c.email && !ig ? `<p class="pmeta">El jugador no dejó datos de contacto.</p>` : ""}
+          ${!c.telefono && !c.email && !ig ? `<p class="note">El jugador no dejó datos de contacto.</p>` : ""}
         </div>
       </div>
     </div>`;
   d.querySelector(".closex").onclick = () => d.close();
-  d.showModal();
-  d.scrollTop = 0;
+  d.showModal(); d.scrollTop = 0;
 }
 function videoHTML(v){
   if (!v) return "";
   const t = esc(v.titulo || "Video");
-  if (v.tipo === "archivo" && assetId(v.id)) return `<div class="vid"><video controls preload="metadata" playsinline src="${blobSrc(assetId(v.id))}"></video><div class="vt">${t}</div></div>`;
+  if (v.tipo === "archivo" && assetId(v.id) && blobSrc(v.id)) return `<div class="vid"><video controls preload="metadata" playsinline src="${esc(blobSrc(v.id))}"></video><div class="vt">${t}</div></div>`;
   const u = safeUrl(v.url);
   if (u) { let host = ""; try { host = new URL(u).hostname.replace(/^www\./,""); } catch {} return `<div class="vid"><a class="vlink" href="${esc(u)}" target="_blank" rel="noopener"><span class="play" aria-hidden="true"></span><span><b>${t}</b><small>${esc(host)}</small></span></a></div>`; }
   return "";
@@ -430,42 +555,49 @@ $("#detail").addEventListener("click", e => {
   if (e.target === e.currentTarget) e.currentTarget.close();
   const b = e.target.closest("[data-copy]");
   if (b){ const txt = b.dataset.copy;
-    navigator.clipboard?.writeText(txt).then(()=>{ b.textContent="Copiado"; setTimeout(()=>b.textContent="Copiar",1500); })
+    Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(txt)).then(()=>{ b.textContent="Copiado"; setTimeout(()=>b.textContent="Copiar",1500); })
       .catch(()=>{ const code = b.parentElement.querySelector("code"); const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
   }
 });
 
 /* ---------- mi ficha ---------- */
+const blankTraj = () => ({club:"",categoria:"",desde:"",hasta:"",logros:""});
 function blank(){
-  return { deporte: DEPORTE, nombre:"", apodo:"", fechaNac:"", nacionalidad:"AR", nacionalidad2:"", pais:"AR", ciudad:"", provincia:"", pasaporteUE:false, dorsal:"", posicion:"", posSec:[], pie:"", altura:"", peso:"", clubActual:"", disponibilidad:"libre",
-    temporada:"", stats:{partidos:"",goles:"",asistencias:"",vallas:""}, trayectoria:[{club:"",categoria:"",desde:"",hasta:"",logros:""}], cualidades:[], bio:"",
+  return { deporte:"futbol", nombre:"", apodo:"", fechaNac:"", nacionalidad:"AR", nacionalidad2:"", pasaporteUE:false, pais:"AR", ciudad:"", provincia:"", dorsal:"", posicion:"", posSec:[], lado:"", altura:"", peso:"", clubActual:"", disponibilidad:"libre",
+    temporada:"", stats:{partidos:"",goles:"",asistencias:"",vallas:""}, trayectoria:[blankTraj()], cualidades:[], bio:"",
     foto:"", videos:[], contacto:{telefono:"",email:"",instagram:""}, publicado:true };
 }
-function fromDoc(d){ const b = blank(); const x = Object.assign(b, JSON.parse(JSON.stringify(d||{}))); x.stats = Object.assign(blank().stats, x.stats||{}); x.contacto = Object.assign(blank().contacto, x.contacto||{});
-  x.pais = paisOf(x); if (x.provincia === "Fuera de Argentina") x.provincia = ""; x.nacionalidad = natCode(x.nacionalidad); x.nacionalidad2 = natCode(x.nacionalidad2); x.pasaporteUE = x.pasaporteUE === true;
-  ["posSec","cualidades","videos","trayectoria"].forEach(k => { if (!Array.isArray(x[k])) x[k] = []; }); if (!x.trayectoria.length) x.trayectoria = blank().trayectoria; delete x._id; return x; }
-
+function fromDoc(d){
+  const x = Object.assign(blank(), JSON.parse(JSON.stringify(d||{})));
+  x.stats = Object.assign(blank().stats, x.stats||{}); x.contacto = Object.assign(blank().contacto, x.contacto||{});
+  x.deporte = sportOf(x); if (!x.lado && x.pie) x.lado = x.pie; delete x.pie;
+  x.pais = paisOf(x); if (x.provincia === "Fuera de Argentina") x.provincia = "";
+  x.nacionalidad = natCode(x.nacionalidad); x.nacionalidad2 = natCode(x.nacionalidad2); x.pasaporteUE = x.pasaporteUE === true;
+  ["posSec","cualidades","videos","trayectoria"].forEach(k => { if (!Array.isArray(x[k])) x[k] = []; });
+  if (!x.trayectoria.length) x.trayectoria = [blankTraj()];
+  delete x._id; return x;
+}
+function provFieldHTML(D){
+  return D.pais === "AR"
+    ? `<label class="fld"><span class="lbl">Provincia</span><select id="i-prov" data-k="provincia"><option value="">Elegí…</option>${PROV.map(p => `<option${p===D.provincia?" selected":""}>${esc(p)}</option>`).join("")}</select></label>`
+    : `<label class="fld"><span class="lbl">Provincia / estado / región</span><input type="text" id="i-prov" data-k="provincia" maxlength="50" value="${esc(D.provincia)}"></label>`;
+}
 function renderMine(){
   const box = $("#mine");
-  if (!S.ready){ box.innerHTML = `<p class="loading">Preparando tu ficha…</p>`; return; }
-  if (!S.db || !S.uid){
-    box.innerHTML = `<div class="empty"><h2>Iniciá sesión para cargar tu ficha</h2><p>Tu ficha se guarda con tu cuenta. Abrí esta página con tu sesión iniciada y volvé a esta pestaña.</p></div>`; return;
-  }
-  if (!S.mineLoaded){ box.innerHTML = `<p class="loading">Buscando tu ficha…</p>`; return; }
-  if (S.canWrite === false){
-    box.innerHTML = `<div class="empty"><h2>Tu acceso es solo de lectura</h2><p>Podés ver las fichas, pero para cargar la tuya necesitás acceso de Colaborador. Pedíselo a quien te compartió esta página.</p></div>`; return;
-  }
+  if (!S.loaded){ box.innerHTML = `<p class="loading">Preparando tu ficha…</p>`; return; }
   if (!S.draft) S.draft = fromDoc(S.myDoc);
-  const D = S.draft;
-  const opt = (arr, val, ph) => `<option value="">${ph}</option>` + arr.map(([k,v]) => `<option value="${esc(k)}"${k===val?" selected":""}>${esc(v)}</option>`).join("");
-  const pairs = a => a.map(x => [x,x]);
+  const D = S.draft, sp = SP(D), L = statLabels(D);
   box.innerHTML = `
-  ${S.myDoc ? "" : `<div class="banner"><b>Armá tu currículum futbolístico</b>Completá lo que puedas. Una ficha con foto, posición, trayectoria y al menos un video es la que más miran los clubes.</div>`}
+  ${S.myDoc ? "" : `<div class="banner"><b>Armá tu currículum deportivo</b>Completá lo que puedas. Una ficha con foto, posición, trayectoria y al menos un video es la que más miran los clubes.</div>`}
   <div class="edit">
     <form id="form" novalidate autocomplete="off">
+      <div class="sec sportsec"><h2>Tu deporte</h2><p class="hint">Fútbol es el principal, pero podés cargar tu ficha en otro deporte. Cuando haya jugadores de un deporte nuevo, aparece solo en la búsqueda.</p>
+        <div class="row"><label class="fld"><span class="lbl">Deporte *</span><select id="i-dep" data-k="deporte">${SPORT_KEYS.map(k => `<option value="${k}"${k===D.deporte?" selected":""}>${esc(SPORTS[k].nombre)}</option>`).join("")}</select></label></div>
+      </div>
+
       <div class="sec"><h2>Datos personales</h2><p class="hint">Así te van a encontrar los clubes.</p>
         <div class="row">
-          <label class="fld"><span class="lbl">Nombre y apellido *</span><input type="text" id="i-nombre" data-k="nombre" maxlength="60" required value="${esc(D.nombre)}"></label>
+          <label class="fld"><span class="lbl">Nombre y apellido *</span><input type="text" id="i-nombre" data-k="nombre" maxlength="60" value="${esc(D.nombre)}"></label>
           <label class="fld"><span class="lbl">Apodo</span><input type="text" id="i-apodo" data-k="apodo" maxlength="30" value="${esc(D.apodo)}"></label>
         </div>
         <div class="row">
@@ -478,34 +610,34 @@ function renderMine(){
           <span id="prov-wrap" style="display:contents">${provFieldHTML(D)}</span>
           <label class="fld"><span class="lbl">Ciudad</span><input type="text" id="i-ciudad" data-k="ciudad" maxlength="50" value="${esc(D.ciudad)}"></label>
         </div>
-        <label class="chk" style="white-space:normal"><input type="checkbox" id="i-ue" data-k="pasaporteUE"${D.pasaporteUE?" checked":""}> Tengo pasaporte comunitario (Unión Europea). En Europa no ocupás cupo de extranjero.</label>
+        <label class="chk"><input type="checkbox" id="i-ue" data-k="pasaporteUE"${D.pasaporteUE?" checked":""}> Tengo pasaporte comunitario (Unión Europea). En Europa no ocupás cupo de extranjero.</label>
       </div>
 
-      <div class="sec"><h2>Perfil futbolístico</h2><p class="hint">Tu posición y tus características físicas.</p>
+      <div class="sec"><h2>Perfil deportivo</h2><p class="hint">Tu posición y tus características físicas.</p>
         <div class="row">
-          <label class="fld"><span class="lbl">Posición principal *</span><select id="i-pos" data-k="posicion">${opt(POS, D.posicion, "Elegí…")}</select></label>
-          <label class="fld"><span class="lbl">Pie hábil</span><select id="i-pie" data-k="pie">${opt([["derecho","Derecho"],["izquierdo","Izquierdo"],["ambidiestro","Ambidiestro"]], D.pie, "Elegí…")}</select></label>
-          <label class="fld"><span class="lbl">Dorsal preferido</span><input type="number" id="i-dorsal" data-k="dorsal" min="1" max="99" value="${esc(D.dorsal)}"></label>
+          <label class="fld"><span class="lbl">Posición principal *</span><select id="i-pos" data-k="posicion">${opts(sp.posiciones, D.posicion, "Elegí…")}</select></label>
+          <label class="fld"><span class="lbl">${esc(sp.lado)}</span><select id="i-lado" data-k="lado">${opts([["derecho","Derecho"],["izquierdo","Izquierdo"],["ambidiestro","Ambidiestro"]], D.lado, "Elegí…")}</select></label>
+          <label class="fld"><span class="lbl">Número preferido</span><input type="number" id="i-dorsal" data-k="dorsal" min="0" max="99" value="${esc(D.dorsal)}"></label>
         </div>
         <div class="row">
           <label class="fld"><span class="lbl">Altura (cm)</span><input type="number" id="i-alt" data-k="altura" min="120" max="230" value="${esc(D.altura)}"></label>
-          <label class="fld"><span class="lbl">Peso (kg)</span><input type="number" id="i-peso" data-k="peso" min="35" max="150" value="${esc(D.peso)}"></label>
+          <label class="fld"><span class="lbl">Peso (kg)</span><input type="number" id="i-peso" data-k="peso" min="35" max="160" value="${esc(D.peso)}"></label>
           <label class="fld"><span class="lbl">Club actual</span><input type="text" id="i-club" data-k="clubActual" maxlength="60" placeholder="Vacío si estás libre" value="${esc(D.clubActual)}"></label>
         </div>
-        <div class="row"><label class="fld"><span class="lbl">Disponibilidad</span><select id="i-disp" data-k="disponibilidad">${opt(Object.entries(DISP), D.disponibilidad, "Elegí…")}</select></label></div>
+        <div class="row"><label class="fld"><span class="lbl">Disponibilidad</span><select id="i-disp" data-k="disponibilidad">${opts(Object.entries(DISP), D.disponibilidad, "Elegí…")}</select></label></div>
         <div class="lbl" style="margin:6px 0 8px">También juego de</div>
-        <div class="chips">${POS.map(([k,v]) => `<label class="chip"><input type="checkbox" id="ps-${k}" data-arr="posSec" value="${k}"${D.posSec.includes(k)?" checked":""}>${esc(v)}</label>`).join("")}</div>
+        <div class="chips">${sp.posiciones.map(([k,v]) => `<label class="chip"><input type="checkbox" id="ps-${k}" data-arr="posSec" value="${k}"${D.posSec.includes(k)?" checked":""}>${esc(v)}</label>`).join("")}</div>
         <div class="lbl" style="margin:16px 0 8px">Mis cualidades</div>
-        <div class="chips">${TRAITS.map((t,i) => `<label class="chip"><input type="checkbox" id="tr-${i}" data-arr="cualidades" value="${esc(t)}"${D.cualidades.includes(t)?" checked":""}>${esc(t)}</label>`).join("")}</div>
+        <div class="chips">${sp.cualidades.map((t,i) => `<label class="chip"><input type="checkbox" id="tr-${i}" data-arr="cualidades" value="${esc(t)}"${D.cualidades.includes(t)?" checked":""}>${esc(t)}</label>`).join("")}</div>
       </div>
 
       <div class="sec"><h2>Estadísticas</h2><p class="hint">Números de tu última temporada completa.</p>
         <div class="row">
           <label class="fld"><span class="lbl">Temporada</span><input type="text" id="i-temp" data-k="temporada" maxlength="20" placeholder="2025" value="${esc(D.temporada)}"></label>
-          <label class="fld"><span class="lbl">Partidos</span><input type="number" id="i-pj" data-k="stats.partidos" min="0" value="${esc(D.stats.partidos)}"></label>
-          <label class="fld"><span class="lbl">Goles</span><input type="number" id="i-gl" data-k="stats.goles" min="0" value="${esc(D.stats.goles)}"></label>
-          <label class="fld"><span class="lbl">Asistencias</span><input type="number" id="i-as" data-k="stats.asistencias" min="0" value="${esc(D.stats.asistencias)}"></label>
-          <label class="fld"><span class="lbl" id="l-vallas">${D.posicion==="ARQ"?"Vallas invictas":"Títulos"}</span><input type="number" id="i-va" data-k="stats.vallas" min="0" value="${esc(D.stats.vallas)}"></label>
+          <label class="fld"><span class="lbl">${esc(L[0])}</span><input type="number" id="i-s1" data-k="stats.partidos" min="0" step="any" value="${esc(D.stats.partidos)}"></label>
+          <label class="fld"><span class="lbl">${esc(L[1])}</span><input type="number" id="i-s2" data-k="stats.goles" min="0" step="any" value="${esc(D.stats.goles)}"></label>
+          <label class="fld"><span class="lbl">${esc(L[2])}</span><input type="number" id="i-s3" data-k="stats.asistencias" min="0" step="any" value="${esc(D.stats.asistencias)}"></label>
+          <label class="fld"><span class="lbl" id="l-s4">${esc(L[3])}</span><input type="number" id="i-s4" data-k="stats.vallas" min="0" step="any" value="${esc(D.stats.vallas)}"></label>
         </div>
       </div>
 
@@ -514,11 +646,11 @@ function renderMine(){
         <button type="button" class="btn sm" id="add-traj">+ Agregar club</button>
       </div>
 
-      <div class="sec"><h2>Foto</h2><p class="hint">Una foto de cuerpo entero o medio cuerpo, con buena luz. Mejor con la ropa de juego.</p>
+      <div class="sec"><h2>Foto</h2><p class="hint">Una foto de cuerpo entero o medio cuerpo, con buena luz y con la ropa de juego.</p>
         <div class="media-row">
-          <div class="thumb" id="thumb">${assetId(D.foto) ? `<img src="${blobSrc(assetId(D.foto))}" alt="Tu foto">` : "Sin foto"}</div>
+          <div class="thumb" id="thumb">${assetId(D.foto) && blobSrc(D.foto) ? `<img src="${esc(blobSrc(D.foto))}" alt="Tu foto">` : "Sin foto"}</div>
           <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
-            ${S.assets ? `<label class="btn" for="i-foto">Elegir foto</label><input type="file" id="i-foto" accept="image/*" hidden>` : `<p class="note">Tu acceso no permite subir archivos. Pedí acceso de Colaborador a quien te compartió la página.</p>`}
+            ${S.assets ? `<label class="btn" for="i-foto">Elegir foto</label><input type="file" id="i-foto" accept="image/*" hidden>` : `<p class="note">Este navegador no permite guardar archivos.</p>`}
             ${assetId(D.foto) ? `<button type="button" class="btn sm danger" id="rm-foto">Quitar foto</button>` : ""}
             <span class="note" id="foto-msg"></span>
           </div>
@@ -541,7 +673,7 @@ function renderMine(){
 
       <div class="savebar">
         <label class="chk"><input type="checkbox" id="i-pub" data-k="publicado"${D.publicado?" checked":""}> Visible para los clubes</label>
-        <span class="msg" id="save-msg">${S.myDoc ? "Ficha guardada." : "Todavía no guardaste tu ficha."}</span>
+        <span class="msg" id="save-msg">${S.myDoc ? (S.dirty ? "Cambios sin guardar." : "Ficha guardada.") : "Todavía no guardaste tu ficha."}</span>
         <span id="del-zone">${S.myDoc ? `<button type="button" class="btn danger" id="del">Borrar ficha</button>` : ""}</span>
         <button type="submit" class="btn primary" id="save">${S.myDoc ? "Guardar cambios" : "Publicar ficha"}</button>
       </div>
@@ -552,12 +684,13 @@ function renderMine(){
   bindForm();
 }
 function trowHTML(t, i){
+  const cats = SP(S.draft).categorias;
   return `<div class="trow" data-i="${i}">
     <label class="fld t-club"><span class="lbl">Club</span><input type="text" id="t-club-${i}" data-t="club" maxlength="60" value="${esc(t.club)}"></label>
-    <label class="fld"><span class="lbl">Categoría</span><select id="t-cat-${i}" data-t="categoria"><option value="">—</option>${CATS.map(c=>`<option${c===t.categoria?" selected":""}>${esc(c)}</option>`).join("")}</select></label>
+    <label class="fld"><span class="lbl">Categoría</span><select id="t-cat-${i}" data-t="categoria"><option value="">—</option>${cats.map(c=>`<option${c===t.categoria?" selected":""}>${esc(c)}</option>`).join("")}</select></label>
     <label class="fld"><span class="lbl">Desde</span><input type="number" id="t-de-${i}" data-t="desde" min="1980" max="2100" placeholder="2022" value="${esc(t.desde)}"></label>
     <label class="fld"><span class="lbl">Hasta</span><input type="number" id="t-ha-${i}" data-t="hasta" min="1980" max="2100" placeholder="hoy" value="${esc(t.hasta)}"></label>
-    <label class="fld t-logros"><span class="lbl">Logros</span><input type="text" id="t-lo-${i}" data-t="logros" maxlength="80" placeholder="Campeón Apertura, goleador…" value="${esc(t.logros)}"></label>
+    <label class="fld t-logros"><span class="lbl">Logros</span><input type="text" id="t-lo-${i}" data-t="logros" maxlength="80" placeholder="Campeón, goleador, mejor jugador…" value="${esc(t.logros)}"></label>
     <button type="button" class="btn sm" data-rm-traj="${i}" aria-label="Quitar club">Quitar</button>
   </div>`;
 }
@@ -571,12 +704,9 @@ function vlistHTML(){
 function vaddHTML(){
   if (S.draft.videos.length >= MAX_VIDEOS) return `<p class="note">Llegaste al máximo de ${MAX_VIDEOS} videos.</p>`;
   return `<div class="addv"><label class="fld"><span class="lbl">Link del video</span><input type="url" id="v-url" placeholder="https://youtube.com/…"></label><button type="button" class="btn" id="v-add-link">Agregar link</button></div>
-    ${S.assets ? `<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn" for="v-file">Subir clip</label><input type="file" id="v-file" accept="video/mp4,video/webm" hidden><span class="note" id="v-msg" style="margin:0"></span></div>` : `<p class="note">Tu acceso no permite subir clips; podés agregar links.</p>`}`;
+    ${S.assets ? `<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="btn" for="v-file">Subir clip</label><input type="file" id="v-file" accept="video/mp4,video/webm" hidden><span class="note" id="v-msg" style="margin:0"></span></div>` : ""}`;
 }
-function renderPreview(){
-  const p = $("#preview"); if (!p) return;
-  p.innerHTML = cardHTML(S.draft, false);
-}
+function renderPreview(){ const p = $("#preview"); if (p) p.innerHTML = cardHTML(S.draft, false); }
 function setPath(obj, path, val){ const k = path.split("."); let o = obj; while (k.length > 1) o = o[k.shift()]; o[k[0]] = val; }
 function touch(){ S.dirty = true; const m = $("#save-msg"); if (m){ m.className = "msg"; m.textContent = "Cambios sin guardar."; } renderPreview(); }
 
@@ -584,9 +714,12 @@ function bindForm(){
   const f = $("#form");
   f.addEventListener("input", e => {
     const el = e.target, D = S.draft;
-    if (el.dataset.k){ setPath(D, el.dataset.k, el.type === "checkbox" ? el.checked : el.value);
+    if (el.dataset.k){
+      setPath(D, el.dataset.k, el.type === "checkbox" ? el.checked : el.value);
+      if (el.dataset.k === "deporte"){ D.posicion = ""; D.posSec = []; D.cualidades = []; D.trayectoria.forEach(t => { if (!SP(D).categorias.includes(t.categoria)) t.categoria = ""; }); S.dirty = true; renderMine(); return; }
       if (el.dataset.k === "pais"){ D.provincia = ""; $("#prov-wrap").innerHTML = provFieldHTML(D); }
-      if (el.dataset.k === "posicion") $("#l-vallas").textContent = el.value === "ARQ" ? "Vallas invictas" : "Títulos"; }
+      if (el.dataset.k === "posicion") $("#l-s4").textContent = statLabels(D)[3];
+    }
     else if (el.dataset.arr){ const a = D[el.dataset.arr]; const i = a.indexOf(el.value); if (el.checked && i<0) a.push(el.value); if (!el.checked && i>=0) a.splice(i,1); }
     else if (el.dataset.t){ const i = +el.closest(".trow").dataset.i; D.trayectoria[i][el.dataset.t] = el.value; }
     else if (el.dataset.v){ D.videos[+el.dataset.v].titulo = el.value; }
@@ -594,19 +727,19 @@ function bindForm(){
     touch();
   });
   f.addEventListener("click", e => {
-    const D = S.draft;
-    if (e.target.id === "add-traj"){ if (D.trayectoria.length >= 12) return; D.trayectoria.push({club:"",categoria:"",desde:"",hasta:"",logros:""}); $("#traj").innerHTML = D.trayectoria.map(trowHTML).join(""); touch(); }
-    const rt = e.target.closest("[data-rm-traj]"); if (rt){ D.trayectoria.splice(+rt.dataset.rmTraj,1); if (!D.trayectoria.length) D.trayectoria.push({club:"",categoria:"",desde:"",hasta:"",logros:""}); $("#traj").innerHTML = D.trayectoria.map(trowHTML).join(""); touch(); }
+    const D = S.draft, id = e.target.id;
+    if (id === "add-traj"){ if (D.trayectoria.length >= 12) return; D.trayectoria.push(blankTraj()); $("#traj").innerHTML = D.trayectoria.map(trowHTML).join(""); touch(); }
+    const rt = e.target.closest("[data-rm-traj]"); if (rt){ D.trayectoria.splice(+rt.dataset.rmTraj,1); if (!D.trayectoria.length) D.trayectoria.push(blankTraj()); $("#traj").innerHTML = D.trayectoria.map(trowHTML).join(""); touch(); }
     const rv = e.target.closest("[data-rm-v]"); if (rv){ D.videos.splice(+rv.dataset.rmV,1); refreshVideos(); touch(); }
-    if (e.target.id === "v-add-link"){
+    if (id === "v-add-link"){
       const inp = $("#v-url"), u = safeUrl(inp.value.trim());
       if (!u){ inp.setCustomValidity("Pegá un link que empiece con https://"); inp.reportValidity(); setTimeout(()=>inp.setCustomValidity(""),2500); return; }
       D.videos.push({tipo:"link", url:u, titulo:""}); refreshVideos(); touch();
     }
-    if (e.target.id === "rm-foto"){ D.foto = ""; $("#thumb").innerHTML = "Sin foto"; e.target.remove(); touch(); }
-    if (e.target.id === "del"){ $("#del-zone").innerHTML = `<span class="confirm">¿Borrar tu ficha? <button type="button" class="btn sm danger" id="del-yes">Sí, borrar</button><button type="button" class="btn sm" id="del-no">Cancelar</button></span>`; }
-    if (e.target.id === "del-no"){ $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`; }
-    if (e.target.id === "del-yes") deleteMine();
+    if (id === "rm-foto"){ D.foto = ""; $("#thumb").innerHTML = "Sin foto"; e.target.remove(); touch(); }
+    if (id === "del") $("#del-zone").innerHTML = `<span class="confirm">¿Borrar tu ficha? <button type="button" class="btn sm danger" id="del-yes">Sí, borrar</button><button type="button" class="btn sm" id="del-no">Cancelar</button></span>`;
+    if (id === "del-no") $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`;
+    if (id === "del-yes"){ store.del(ME); S.myDoc = null; S.draft = null; S.dirty = false; renderMine(); $("#save-msg").textContent = "Tu ficha fue borrada."; }
   });
   f.addEventListener("change", e => {
     if (e.target.id === "i-foto" && e.target.files[0]) uploadPhoto(e.target.files[0]);
@@ -626,137 +759,69 @@ async function shrinkImage(file){
     return await new Promise(r => c.toBlob(b => r(b || file), "image/jpeg", 0.86));
   } catch { return file; }
 }
-function upErr(e){
-  const c = e && e.code;
-  return c === "too_large" ? "El archivo es demasiado grande (máximo 20 MB)."
-    : c === "unsupported_type" ? "Ese formato no se puede subir. Usá JPG/PNG para fotos y MP4 o WebM para videos."
-    : c === "quota_or_state" ? "Se llenó el espacio de la página. Probá con un link en lugar de un archivo."
-    : c === "rate_limited" ? "Demasiados intentos seguidos. Esperá un minuto y volvé a probar."
-    : "No se pudo subir el archivo. Volvé a intentarlo.";
-}
 async function uploadPhoto(file){
-  const m = $("#foto-msg"); m.textContent = "Subiendo foto…";
+  const m = $("#foto-msg"); m.textContent = "Guardando foto…";
   try {
-    const blob = await shrinkImage(file);
-    const r = await S.assets.upload(blob, {type: blob.type && /^image\/(png|jpeg|gif|webp)$/.test(blob.type) ? blob.type : "image/jpeg"});
+    const r = await S.assets.upload(await shrinkImage(file));
     S.draft.foto = r.id; $("#thumb").innerHTML = `<img src="${esc(r.url)}" alt="Tu foto">`; m.textContent = "Foto lista. Guardá para publicarla.";
     if (!$("#rm-foto")) m.insertAdjacentHTML("beforebegin", `<button type="button" class="btn sm danger" id="rm-foto">Quitar foto</button>`);
     touch();
-  } catch(e){ m.textContent = upErr(e); }
+  } catch { m.textContent = "No se pudo guardar la foto. Probá con otra imagen."; }
 }
 async function uploadVideo(file){
   const m = $("#v-msg");
-  const type = /webm$/i.test(file.name) || file.type === "video/webm" ? "video/webm" : (/mp4$/i.test(file.name) || file.type === "video/mp4" ? "video/mp4" : "");
-  if (!type){ m.textContent = "Usá un archivo MP4 o WebM. Los videos .MOV del iPhone conviene subirlos a YouTube y pegar el link."; return; }
+  const ok = /\.(mp4|webm)$/i.test(file.name) || /^video\/(mp4|webm)$/.test(file.type);
+  if (!ok){ m.textContent = "Usá un archivo MP4 o WebM. Los videos .MOV del iPhone conviene subirlos a YouTube y pegar el link."; return; }
   if (file.size > 20*1024*1024){ m.textContent = `El clip pesa ${(file.size/1048576).toFixed(1)} MB y el máximo es 20 MB. Recortalo o subilo a YouTube y pegá el link.`; return; }
-  m.textContent = "Subiendo clip…";
+  m.textContent = "Guardando clip…";
   try {
-    const r = await S.assets.upload(file, {type});
+    const r = await S.assets.upload(file);
     S.draft.videos.push({tipo:"archivo", id:r.id, titulo: file.name.replace(/\.[^.]+$/,"").slice(0,60)});
     refreshVideos(); touch();
-  } catch(e){ m.textContent = upErr(e); }
+  } catch { m.textContent = "No se pudo guardar el clip. El navegador puede no tener espacio."; }
 }
 function clean(D){
-  const n = v => { const x = num(v); return x === null || v === "" ? "" : x; };
+  const n = v => { const x = num(v); return x === null ? "" : x; };
+  const sp = SP(D);
   return {
-    deporte: SPORTS[D.deporte] ? D.deporte : DEPORTE, nombre: D.nombre.trim().slice(0,60), apodo: D.apodo.trim().slice(0,30), fechaNac: D.fechaNac, nacionalidad: ISO.has(D.nacionalidad) ? D.nacionalidad : "", nacionalidad2: ISO.has(D.nacionalidad2) && D.nacionalidad2 !== D.nacionalidad ? D.nacionalidad2 : "", pasaporteUE: !!D.pasaporteUE, pais: ISO.has(D.pais) ? D.pais : "",
+    deporte: sportOf(D), nombre: D.nombre.trim().slice(0,60), apodo: D.apodo.trim().slice(0,30), fechaNac: D.fechaNac,
+    nacionalidad: ISO.has(D.nacionalidad) ? D.nacionalidad : "", nacionalidad2: ISO.has(D.nacionalidad2) && D.nacionalidad2 !== D.nacionalidad ? D.nacionalidad2 : "",
+    pasaporteUE: !!D.pasaporteUE, pais: ISO.has(D.pais) ? D.pais : "",
     ciudad: D.ciudad.trim().slice(0,50), provincia: D.pais === "AR" ? (PROV.includes(D.provincia) ? D.provincia : "") : String(D.provincia || "").trim().slice(0,50),
-    dorsal: n(D.dorsal), posicion: POSMAP[D.posicion] ? D.posicion : "", posSec: D.posSec.filter(k=>POSMAP[k]),
-    pie: ["derecho","izquierdo","ambidiestro"].includes(D.pie) ? D.pie : "", altura: n(D.altura), peso: n(D.peso),
+    dorsal: n(D.dorsal), posicion: sp.posMap[D.posicion] ? D.posicion : "", posSec: D.posSec.filter(k => sp.posMap[k]),
+    lado: ["derecho","izquierdo","ambidiestro"].includes(D.lado) ? D.lado : "", altura: n(D.altura), peso: n(D.peso),
     clubActual: D.clubActual.trim().slice(0,60), disponibilidad: DISP[D.disponibilidad] ? D.disponibilidad : "",
     temporada: D.temporada.trim().slice(0,20), stats: {partidos:n(D.stats.partidos), goles:n(D.stats.goles), asistencias:n(D.stats.asistencias), vallas:n(D.stats.vallas)},
-    trayectoria: D.trayectoria.filter(t=>t.club.trim()).slice(0,12).map(t=>({club:t.club.trim().slice(0,60), categoria:CATS.includes(t.categoria)?t.categoria:"", desde:n(t.desde), hasta:n(t.hasta), logros:String(t.logros||"").trim().slice(0,80)})),
-    cualidades: D.cualidades.filter(t=>TRAITS.includes(t)), bio: D.bio.trim().slice(0,800), foto: assetId(D.foto),
+    trayectoria: D.trayectoria.filter(t=>t.club.trim()).slice(0,12).map(t=>({club:t.club.trim().slice(0,60), categoria:sp.categorias.includes(t.categoria)?t.categoria:"", desde:n(t.desde), hasta:n(t.hasta), logros:String(t.logros||"").trim().slice(0,80)})),
+    cualidades: D.cualidades.filter(t => sp.cualidades.includes(t)), bio: D.bio.trim().slice(0,800), foto: assetId(D.foto),
     videos: D.videos.slice(0,MAX_VIDEOS).map(v => v.tipo==="archivo" ? {tipo:"archivo", id:assetId(v.id), titulo:String(v.titulo||"").slice(0,60)} : {tipo:"link", url:safeUrl(v.url), titulo:String(v.titulo||"").slice(0,60)}).filter(v=>v.id||v.url),
     contacto: {telefono:D.contacto.telefono.trim().slice(0,25), email:D.contacto.email.trim().slice(0,80), instagram:D.contacto.instagram.trim().slice(0,40)},
     publicado: !!D.publicado, actualizado: Date.now()
   };
 }
-let saving = false;
-async function saveMine(){
-  if (saving) return;
+function saveMine(){
   const m = $("#save-msg"), D = S.draft;
   if (!D.nombre.trim()){ m.className = "msg bad"; m.textContent = "Falta tu nombre y apellido."; $("#i-nombre").focus(); return; }
-  if (!POSMAP[D.posicion]){ m.className = "msg bad"; m.textContent = "Elegí tu posición principal."; $("#i-pos").focus(); return; }
-  saving = true; const b = $("#save"); b.disabled = true; m.className = "msg"; m.textContent = "Guardando…";
-  try {
-    const data = clean(D);
-    await S.db.doc("players/" + S.uid).set(data);
-    S.myDoc = data; S.dirty = false;
-    m.className = "msg ok"; m.textContent = data.publicado ? "Ficha publicada. Ya la pueden ver los clubes." : "Ficha guardada como oculta.";
-    b.textContent = "Guardar cambios";
-    if (!$("#del")) $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`;
-  } catch(e){
-    m.className = "msg bad";
-    m.textContent = e && e.code === "invalid_argument" ? "Tu acceso no permite guardar fichas. Pedí acceso de Colaborador." : "No se pudo guardar. Revisá tu conexión y volvé a intentar.";
-    if (e && e.code === "invalid_argument") S.canWrite = false;
-  } finally { saving = false; b.disabled = false; }
-}
-async function deleteMine(){
-  const m = $("#save-msg");
-  try { await S.db.doc("players/" + S.uid).delete(); S.myDoc = null; S.draft = null; renderMine(); $("#save-msg").textContent = "Tu ficha fue borrada."; }
-  catch { m.className = "msg bad"; m.textContent = "No se pudo borrar. Volvé a intentar."; }
-}
-
-/* ---------- modo demo: datos en este navegador ---------- */
-const LS_KEY = "fa_players_v1", urls = new Map();
-const blobSrc = id => urls.get(id) || "";
-let idb = null;
-function openIDB(){ return new Promise(res => { try { const r = indexedDB.open("fichaje-abierto", 1); r.onupgradeneeded = () => r.result.createObjectStore("blobs"); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
-function idbAll(){ return new Promise(res => { if (!idb) return res([]); const out = []; const c = idb.transaction("blobs").objectStore("blobs").openCursor(); c.onsuccess = () => { const cur = c.result; if (cur){ out.push([cur.key, cur.value]); cur.continue(); } else res(out); }; c.onerror = () => res(out); }); }
-function idbPut(id, blob){ return new Promise((res, rej) => { if (!idb) return rej({code:"capability_disabled"}); const t = idb.transaction("blobs","readwrite"); t.objectStore("blobs").put(blob, id); t.oncomplete = res; t.onerror = () => rej({code:"quota_or_state"}); }); }
-function idbClear(){ return new Promise(res => { if (!idb) return res(); const t = idb.transaction("blobs","readwrite"); t.objectStore("blobs").clear(); t.oncomplete = res; t.onerror = res; }); }
-const readAll = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch { return {}; } };
-const writeAll = o => { try { localStorage.setItem(LS_KEY, JSON.stringify(o)); return true; } catch { return false; } };
-const listeners = new Set();
-const snap = () => { const all = readAll(); const docs = Object.entries(all).sort((a,b)=>(b[1].actualizado||0)-(a[1].actualizado||0)).map(([id,d]) => ({id, exists:true, data:()=>d})); return {docs, size:docs.length, empty:!docs.length}; };
-const emit = () => { const s = snap(); listeners.forEach(fn => fn(s)); };
-addEventListener("storage", e => { if (e.key === LS_KEY) emit(); });
-const localDB = {
-  collection(){ const q = { orderBy(){ return q; }, limit(){ return q; }, onSnapshot(fn){ listeners.add(fn); setTimeout(()=>fn(snap())); return () => listeners.delete(fn); } }; return q; },
-  doc(path){ const id = path.split("/")[1]; return {
-    async get(){ const d = readAll()[id]; return {id, exists:!!d, data:()=>d}; },
-    async set(data){ const all = readAll(); all[id] = data; if (!writeAll(all)) throw {code:"quota_exceeded"}; emit(); },
-    async delete(){ const all = readAll(); delete all[id]; writeAll(all); emit(); } }; }
-};
-const localAssets = { async upload(blob){ const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2,"0")).join(""); await idbPut(id, blob); const url = URL.createObjectURL(blob); urls.set(id, url); return {id, url, sizeBytes: blob.size, contentType: blob.type}; } };
-
-const EJEMPLOS = [
-  {nombre:"Ejemplo · Matías Correa", apodo:"Mati", fechaNac:"2001-04-12", nacionalidad:"AR", pais:"AR", ciudad:"9 de Julio", provincia:"Buenos Aires", dorsal:9, posicion:"DC", posSec:["EI"], pie:"derecho", altura:181, peso:77, clubActual:"", disponibilidad:"libre", temporada:"2025", stats:{partidos:24, goles:17, asistencias:5, vallas:1}, trayectoria:[{club:"Club Atlético Ejemplo", categoria:"Liga regional", desde:2022, hasta:2025, logros:"Goleador del Apertura"}], cualidades:["Definición","Juego aéreo","Velocidad"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[{tipo:"link", url:"https://www.youtube.com/", titulo:"Goles 2025 (link de ejemplo)"}], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
-  {nombre:"Ejemplo · Lucas Benítez", apodo:"", fechaNac:"1998-09-03", nacionalidad:"AR", pais:"AR", ciudad:"Junín", provincia:"Buenos Aires", dorsal:1, posicion:"ARQ", posSec:[], pie:"derecho", altura:189, peso:84, clubActual:"Sportivo Ejemplo", disponibilidad:"abierto", temporada:"2025", stats:{partidos:28, goles:0, asistencias:0, vallas:11}, trayectoria:[{club:"Sportivo Ejemplo", categoria:"Primera local", desde:2020, hasta:"", logros:"Campeón Clausura 2024"}], cualidades:["Atajadas","Juego con los pies","Liderazgo"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true},
-  {nombre:"Ejemplo · Tomás Ríos", apodo:"Tomi", fechaNac:"2004-01-22", nacionalidad:"AR", nacionalidad2:"IT", pasaporteUE:true, pais:"AR", ciudad:"Rosario", provincia:"Santa Fe", dorsal:10, posicion:"MO", posSec:["MC","ED"], pie:"izquierdo", altura:172, peso:68, clubActual:"", disponibilidad:"prueba", temporada:"2025", stats:{partidos:19, goles:6, asistencias:11, vallas:0}, trayectoria:[{club:"Ejemplo FC", categoria:"Inferiores", desde:2016, hasta:2023, logros:""}], cualidades:["Visión de juego","Gambeta","Pelota parada"], bio:"Jugador de ejemplo para probar la app.", foto:"", videos:[], contacto:{telefono:"", email:"", instagram:""}, publicado:true}
-];
-function demoBar(){
-  if (/pruebas/i.test(location.hostname)){
-    const t = document.createElement("div"); t.className = "testbar";
-    t.innerHTML = `<div class="wrap"><b>SITIO DE PRUEBAS.</b> Acá se ven los cambios antes de publicarlos. El sitio oficial todavía no cambió.</div>`;
-    document.body.insertBefore(t, document.body.firstChild);
-  }
-  const bar = document.createElement("div"); bar.className = "demobar";
-  bar.innerHTML = `<div class="wrap"><span><b>Modo demo.</b> Las fichas, fotos y videos se guardan solo en este navegador.</span><span class="demo-act"><button type="button" class="btn sm" id="demo-seed">Cargar 3 jugadores de ejemplo</button><span id="demo-reset-zone"><button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button></span></span></div>`;
-  document.body.insertBefore(bar, document.body.firstChild);
-  bar.addEventListener("click", async e => {
-    if (e.target.id === "demo-seed"){ const all = readAll(); EJEMPLOS.forEach((p,i) => { all["ejemplo-"+(i+1)] = Object.assign({}, p, {actualizado: Date.now()-i*1000}); }); writeAll(all); emit(); location.hash = "explorar"; }
-    if (e.target.id === "demo-reset") $("#demo-reset-zone").innerHTML = `¿Borrar todas las fichas de este navegador? <button type="button" class="btn sm danger" id="demo-yes">Sí</button> <button type="button" class="btn sm" id="demo-no">No</button>`;
-    if (e.target.id === "demo-no") $("#demo-reset-zone").innerHTML = `<button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button>`;
-    if (e.target.id === "demo-yes"){ writeAll({}); await idbClear(); urls.clear(); S.myDoc = null; S.draft = null; emit(); $("#demo-reset-zone").innerHTML = `<button type="button" class="btn sm danger" id="demo-reset">Borrar todo</button>`; if (location.hash === "#mi-ficha") renderMine(); }
-  });
+  if (!SP(D).posMap[D.posicion]){ m.className = "msg bad"; m.textContent = "Elegí tu posición principal."; $("#i-pos").focus(); return; }
+  const data = clean(D);
+  store.set(ME, data);
+  S.myDoc = data; S.dirty = false;
+  if (data.publicado){ S.sport = data.deporte; try { localStorage.setItem("fa_sport", S.sport); } catch {} syncSportFilters(); }
+  m.className = "msg ok"; m.textContent = data.publicado ? `Ficha publicada en ${SPORTS[data.deporte].nombre}. Ya la pueden ver los clubes.` : "Ficha guardada como oculta.";
+  $("#save").textContent = "Guardar cambios";
+  if (!$("#del")) $("#del-zone").innerHTML = `<button type="button" class="btn danger" id="del">Borrar ficha</button>`;
 }
 
 /* ---------- arranque ---------- */
-route(); renderGrid();
-async function boot(){
-  demoBar();
+topBars(); route(); renderGrid();
+(async function boot(){
   idb = await openIDB();
   for (const [id, blob] of await idbAll()) urls.set(id, URL.createObjectURL(blob));
-  S.db = localDB; S.assets = idb ? localAssets : null; S.uid = "yo"; S.canWrite = true; S.ready = true;
-  const mine = await localDB.doc("players/yo").get(); S.myDoc = mine.exists ? mine.data() : null; S.mineLoaded = true;
-  localDB.collection("players").onSnapshot(s => { S.players = s.docs.map(d => Object.assign({}, d.data(), {_id: d.id})); S.loaded = true; renderGrid(); });
-  renderGrid(); if (location.hash === "#mi-ficha") renderMine();
-}
-boot();
+  S.assets = idb ? uploader : null;
+  S.myDoc = store.get(ME);
+  store.subscribe(list => { S.players = list.map(p => (p.lado || !p.pie) ? p : Object.assign({}, p, {lado: p.pie})); S.loaded = true; renderGrid(); if (location.hash === "#mi-ficha" && !S.draft) renderMine(); });
+})();
 })();
 </script>
-
 </body>
 </html>
