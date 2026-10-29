@@ -232,6 +232,13 @@ dialog::backdrop{background:rgba(5,10,20,.7)}
 .acctbar{display:flex;gap:8px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);font-size:14px}
 .authwrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .authwrap .chiprow{margin-bottom:14px}
+dialog:has(.gate){max-width:min(480px,calc(100vw - 24px))}
+.gate{max-width:440px;margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.gate .gate-card{width:200px;max-width:100%;pointer-events:none}
+.gate .gate-card .pcard{cursor:default}
+.gate h2{margin-top:6px}
+.gate .hint{margin:0}
+.gate-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
 input[type=password],input[type=month]{width:100%;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:9px 11px;color:var(--ink)}
 /* Cuerpo técnico */
 .specs.coach b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
@@ -939,6 +946,7 @@ async function renderConfirm(){
 
 /* ---------- perfil ---------- */
 function openDetail(p){
+  if (!ME) return openGate(p, "p");
   if (isCoach(p)) return openCoach(p);
   const d = $("#detail"), a = age(p.fechaNac), sp = SP(p), st = p.stats || {}, L = statLabels(p);
   const traj = (Array.isArray(p.trayectoria) ? p.trayectoria : []).filter(t => t && t.club);
@@ -1504,6 +1512,7 @@ function renderClubs(){
 $("#clubgrid").addEventListener("click", e => { const b = e.target.closest("[data-club]"); if (!b) return; const c = S.clubs.find(x => x._id === b.dataset.club); if (c) openClub(c); });
 
 function openClub(c){
+  if (!ME) return openGate(c, "club");
   const d = $("#detail"), ct = c.contacto || {};
   const members = plantelOf(c).map(x => playerById(x.p)).filter(p => p && isMember(c, p));
   const posts = postsOf(c).slice().sort((a,b) => (+b.creado||0) - (+a.creado||0));
@@ -1956,6 +1965,7 @@ function licBlockHTML(p){
     <p class="note">Datos declarados por el entrenador. El club puede pedirle el carnet para verificarlo.</p>`;
 }
 function openCoach(p){
+  if (!ME) return openGate(p, "p");
   const d = $("#detail"), a = age(p.fechaNac), sp = SP(p), pr = isProfe(p);
   const traj = (Array.isArray(p.trayectoria) ? p.trayectoria : []).filter(t => t && t.club);
   const vids = (Array.isArray(p.videos) ? p.videos : []).slice(0, MAX_VIDEOS);
@@ -2499,7 +2509,23 @@ const sbAssets = {
 };
 
 /* ---------- cuentas: ingresar, crear cuenta, validar correo, recuperar contraseña ---------- */
-const BACK_KEY = "fa_back";
+const BACK_KEY = "fa_back", OPEN_KEY = "fa_open";
+/* Sin cuenta se ven las tarjetas; para la ficha completa hay que ingresar */
+function openGate(x, kind){
+  const d = $("#detail"), club = kind === "club", back = location.hash || "#inicio", openRef = (club ? "club:" : "p:") + x._id;
+  d.innerHTML = `<div class="npanel gate">
+    <button class="closex" type="button" aria-label="Cerrar" style="background:var(--surface-2);color:var(--ink)">×</button>
+    <div class="gate-card">${club ? crestHTML(x, true) : cardHTML(x, false)}</div>
+    <h2>Mirá ${club ? "el perfil completo" : "la ficha completa"}</h2>
+    <p class="hint">${club ? "Las publicaciones, el plantel y el contacto del club" : "La trayectoria, las temporadas, los videos, las referencias y el contacto"} se ven con una cuenta. Crearla es gratis y lleva un minuto.</p>
+    <div class="gate-actions">
+      <a class="btn primary" href="#mi-ficha" data-auth-mode="registro" data-back="${esc(back)}" data-open="${esc(openRef)}">Crear cuenta gratis</a>
+      <a class="btn" href="#mi-ficha" data-auth-mode="login" data-back="${esc(back)}" data-open="${esc(openRef)}">Ya tengo cuenta</a>
+    </div>
+  </div>`;
+  d.querySelector(".closex").onclick = () => d.close();
+  if (!d.open) d.showModal(); d.scrollTop = 0;
+}
 function handleAuthFragment(){
   const h = location.hash.slice(1);
   if (!/(^|&)(access_token|error)=/.test(h)) return;
@@ -2585,9 +2611,16 @@ async function afterLogin(){
   let back = ""; try { back = sessionStorage.getItem(BACK_KEY) || ""; sessionStorage.removeItem(BACK_KEY); } catch {}
   if (back && back !== location.hash) location.hash = back; else { route(); }
   updateBell();
+  let open = ""; try { open = sessionStorage.getItem(OPEN_KEY) || ""; sessionStorage.removeItem(OPEN_KEY); } catch {}
+  if (open && ME){
+    const [k, id] = open.split(":"), x = k === "club" ? S.clubs.find(c => c._id === id) : playerById(id);
+    if (x) setTimeout(() => k === "club" ? openClub(x) : openDetail(x), 150);
+  }
 }
 document.addEventListener("click", async e => {
   const back = e.target.closest("[data-back]"); if (back){ try { sessionStorage.setItem(BACK_KEY, back.dataset.back); } catch {} }
+  const op = e.target.closest("[data-open]"); if (op){ try { sessionStorage.setItem(OPEN_KEY, op.dataset.open); } catch {} }
+  const am = e.target.closest("[data-auth-mode]"); if (am){ S.authMode = am.dataset.authMode; const dd = $("#detail"); if (dd.open) dd.close(); }
   const tab = e.target.closest("[data-auth]"); if (tab){ S.authMode = tab.dataset.auth; S.authEmail = ($("#au-mail") || {}).value || S.authEmail; renderMine(); return; }
   if (e.target.id === "logout"){
     try { await authFetch("/logout", null, "POST", true); } catch {}
