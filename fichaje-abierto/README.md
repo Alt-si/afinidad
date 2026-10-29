@@ -2,13 +2,11 @@
 
 Vitrina para jugadores de fútbol amateur: cada jugador carga su ficha (datos, posición, estadísticas, trayectoria, foto y videos) y los clubes buscan refuerzos filtrando por posición, provincia, pie hábil y disponibilidad.
 
-## Estado actual: modo demo
+## Estado actual (rama `pruebas`): conectado a Supabase
 
-Esta versión es un sitio estático (un solo `index.html`, sin servidor).
-
-- Las fichas se guardan en el `localStorage` del navegador y las fotos y videos en IndexedDB.
-- Por eso **los datos no se comparten entre personas ni dispositivos**: sirve para probar el flujo y el diseño.
-- La barra amarilla de arriba permite cargar 3 jugadores de ejemplo y borrar todo.
+- Cuentas con validación de correo (jugador, entrenador, profe o club), datos compartidos y fotos en Supabase.
+- La web habla directo con la API de Supabase (sin librerías externas). La clave publicable va en el código: es pública por diseño y la seguridad la dan las reglas de la base (`supabase/esquema.sql` en el repo fichaje-abierto).
+- Videos: solo links de YouTube.
 
 ## Probarlo en tu computadora
 
