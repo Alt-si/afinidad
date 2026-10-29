@@ -239,6 +239,20 @@ dialog:has(.gate){max-width:min(480px,calc(100vw - 24px))}
 .gate h2{margin-top:6px}
 .gate .hint{margin:0}
 .gate-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.morewrap{display:flex;justify-content:center;margin-top:18px}
+.sitefoot{border-top:1px solid var(--line);margin-top:32px;color:var(--muted);font-size:14px}
+.sitefoot .wrap{display:flex;gap:8px 18px;flex-wrap:wrap;justify-content:space-between;padding-block:18px}
+.sitefoot a{color:inherit}
+.legal{max-width:760px;margin:0 auto}
+.legal h2{margin:24px 0 8px;font-size:20px}
+.legal p,.legal li{line-height:1.55}
+.legal ul{padding-left:20px}
+.legal .upd{color:var(--muted);font-size:14px}
+.chk.legalchk{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:14px;line-height:1.4}
+.chk.legalchk input{margin-top:3px;flex:none}
+.legalchk a,.legal a:not(.btn){color:var(--accent)}
+.tutorbox{grid-column:1/-1;display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.4;padding:10px 12px;border:1px dashed var(--line);border-radius:4px}
+.tutorbox input{margin-top:3px;flex:none}
 input[type=password],input[type=month]{width:100%;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:9px 11px;color:var(--ink)}
 /* Cuerpo técnico */
 .specs.coach b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
@@ -618,7 +632,7 @@ let ME = null;
 const S = { players:[], loaded:false, ready:false, myDoc:null, mineLoaded:false, draft:null, dirty:false, sport:"futbol", db:null, user:null, assets:null, canWrite:null,
   reviewDocs:[], reviewsLoaded:false, refs:new Map(), usedByHash:new Map(), confByHash:new Map(), priv:{tokens:{}, fichaje:""}, refFormOpen:false, confFormOpen:false };
 try { const s = localStorage.getItem("fa_sport"); if (SPORTS[s]) S.sport = s; } catch {}
-function ratingOf(pid){ const rs = S.refs.get(pid) || []; if (!rs.length) return null; return { avg: rs.reduce((a,r)=>a+r.estrellas,0)/rs.length, n: rs.length }; }
+function ratingOfClaude(pid){ const rs = S.refs.get(pid) || []; if (!rs.length) return null; return { avg: rs.reduce((a,r)=>a+r.estrellas,0)/rs.length, n: rs.length }; }
 const confOf = p => hasFichaje(p) && typeof p.fichaje.h === "string" ? (S.confByHash.get(p.fichaje.h) || null) : null;
 const isConf = p => !!confOf(p);
 async function savePrivClaude(patch){ const next = Object.assign({}, S.priv, patch); await S.db.doc("data/users/" + ME + "/invites").set(next); S.priv = next; }
@@ -773,7 +787,7 @@ async function renderRef(){
 }
 
 /* ---------- rutas ---------- */
-function route(){
+function routeBase(){
   const h = location.hash;
   const v = h === "#mi-ficha" ? "mi-ficha" : h === "#explorar" ? "explorar" : h === "#entrenadores" ? "entrenadores" : h === "#profes" ? "profes" : h === "#clubes" && MOSTRAR_CLUBES ? "clubes" : /^#confirmar-[a-f0-9]{32}$/.test(h) ? "confirmar" : /^#ref-[a-f0-9]{32}$/.test(h) ? "ref" : "inicio";
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
@@ -830,7 +844,7 @@ syncSportFilters();
 function photoHTML(p, withName){
   const id = assetId(p.foto), src = id ? blobSrc(id) : "";
   const pn = posName(p);
-  return `<div class="photo"><div class="ph" aria-hidden="true">${esc(initials(p.nombre))}</div>${src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+  return `<div class="photo"><div class="ph" aria-hidden="true">${esc(initials(p.nombre))}</div>${src ? (withName ? thumbImg(id) : `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`) : ""}
     ${isProfe(p) ? `<div class="dorsal" aria-hidden="true">PF</div>` : isDT(p) ? (LIC_LEVEL[p.licencia] ? `<div class="dorsal" aria-label="${esc(LICMAP[p.licencia])}">${esc(LIC_SHORT[p.licencia])}</div>` : "") : num(p.dorsal) !== null ? `<div class="dorsal" aria-label="Dorsal ${esc(p.dorsal)}">${esc(p.dorsal)}</div>` : ""}
     ${pn ? `<div class="pos" title="${esc(pn)}"><b>${esc(p.posicion)}</b></div>` : ""}
     ${withName ? `<div class="shade"></div><div class="on"><div class="pname">${esc(p.nombre || "Tu nombre")}</div><div class="pmeta">${esc(pn || "Posición")}</div></div>` : ""}</div>`;
@@ -873,7 +887,7 @@ function renderGrid(){
     return;
   }
   count.textContent = `${sn} · ${list.length} de ${all.length} jugador${all.length===1?"":"es"}`;
-  grid.innerHTML = list.length ? `<div class="grid">${list.map(p=>cardHTML(p)).join("")}</div>`
+  grid.innerHTML = list.length ? `<div class="grid">${pageOf(grid.id, list).map(p=>cardHTML(p)).join("")}</div>${moreBtn(grid.id, list)}`
     : `<div class="empty"><h2>Sin resultados</h2><p>Ningún jugador coincide con esos filtros. Probá ampliar la posición o el país.</p></div>`;
 }
 $("#grid").addEventListener("click", e => {
@@ -947,6 +961,7 @@ async function renderConfirm(){
 /* ---------- perfil ---------- */
 function openDetail(p){
   if (!ME) return openGate(p, "p");
+  if (p._lite) return hydrateOpen(p, "p");
   if (isCoach(p)) return openCoach(p);
   const d = $("#detail"), a = age(p.fechaNac), sp = SP(p), st = p.stats || {}, L = statLabels(p);
   const traj = (Array.isArray(p.trayectoria) ? p.trayectoria : []).filter(t => t && t.club);
@@ -1076,6 +1091,7 @@ function renderPlayerForm(){
         </div>
         <div class="row">
           <label class="fld"><span class="lbl">Fecha de nacimiento</span><input type="date" id="i-fnac" data-k="fechaNac" value="${esc(D.fechaNac)}"></label>
+          ${tutorHTML(D)}
           <label class="fld"><span class="lbl">Nacionalidad</span><select id="i-nac" data-k="nacionalidad">${countryOpts(D.nacionalidad, "Elegí…")}</select></label>
           <label class="fld"><span class="lbl">Segunda nacionalidad</span><select id="i-nac2" data-k="nacionalidad2">${countryOpts(D.nacionalidad2, "No tengo")}</select></label>
         </div>
@@ -1295,10 +1311,10 @@ function refreshVideos(){ $("#vlist").innerHTML = vlistHTML(); $("#vadd").innerH
 async function shrinkImage(file){
   try {
     const bmp = await createImageBitmap(file);
-    const max = 1400, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const max = 1000, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
     const c = document.createElement("canvas"); c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s);
-    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
-    return await new Promise(r => c.toBlob(b => r(b || file), "image/jpeg", 0.86));
+    const g2 = c.getContext("2d"); g2.fillStyle = "#fff"; g2.fillRect(0, 0, c.width, c.height); g2.drawImage(bmp, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(b => r(b || file), "image/jpeg", 0.8));
   } catch { return file; }
 }
 async function uploadPhoto(file){
@@ -1385,9 +1401,9 @@ const MAX_POSTS = 40;
 Object.assign(S, {clubs:[], clubsLoaded:false, myClub:null, role:null, feedType:"", privLoaded:false, clubDraft:null});
 const plantelOf = c => (c && Array.isArray(c.plantel) ? c.plantel : []).filter(x => x && typeof x.p === "string");
 const postsOf = c => (c && Array.isArray(c.posts) ? c.posts : []).filter(x => x && typeof x.id === "string" && x.titulo && TIPOS_POST[x.tipo]);
-const playerById = id => S.players.find(p => p._id === id);
+const playerById = id => (S.byId && S.byId.get(id)) || S.players.find(p => p._id === id);
 const isMember = (c, p) => !!(c && p) && plantelOf(c).some(x => x.p === p._id) && Array.isArray(p.clubes) && p.clubes.includes(c._id);
-const crestHTML = (c, big) => { const src = assetId(c && c.escudo) ? blobSrc(c.escudo) : ""; return `<div class="crest${big ? " big" : ""}">${src ? `<img src="${esc(src)}" alt="">` : esc(initials(c && c.nombre))}</div>`; };
+const crestHTML = (c, big) => { const src = assetId(c && c.escudo) ? blobSrc(c.escudo) : ""; return `<div class="crest${big ? " big" : ""}">${src ? (big ? `<img src="${esc(src)}" alt="">` : thumbImg(c.escudo)) : esc(initials(c && c.nombre))}</div>`; };
 const clubPlace = c => { const pc = ISO.has(c.pais) ? c.pais : ""; const parts = [c.ciudad, c.provincia].filter(Boolean); if (pc && pc !== "AR") parts.push(cName(pc)); return parts.length ? (pc ? flag(pc) + " " : "") + parts.join(", ") : ""; };
 const ago = t => { const d = Math.round((Date.now() - t) / 86400000); return d <= 0 ? "hoy" : d === 1 ? "ayer" : d < 30 ? `hace ${d} días` : new Date(t).toLocaleDateString("es-AR", {day:"numeric", month:"short", year:"numeric"}); };
 
@@ -1475,7 +1491,7 @@ function renderFeed(){
         ${po.fechaEvento || po.lugar ? `<div class="facts">${po.fechaEvento ? `<span><b>Fecha</b>${esc(fmtD(po.fechaEvento))}${po.hora ? " · " + esc(po.hora) : ""}</span>` : ""}${po.lugar ? `<span><b>Lugar</b>${esc(po.lugar)}</span>` : ""}</div>` : ""}
       </div></button>`; }
     const p = x.p, F = p.fichaje, src = assetId(p.foto) ? blobSrc(p.foto) : "";
-    return `<button type="button" class="post" data-player="${esc(p._id)}"><div class="crest">${src ? `<img src="${esc(src)}" alt="">` : esc(initials(p.nombre))}</div><div style="min-width:0">
+    return `<button type="button" class="post" data-player="${esc(p._id)}"><div class="crest">${src ? thumbImg(p.foto) : esc(initials(p.nombre))}</div><div style="min-width:0">
       <div><span class="ptag fichaje">${esc(TIPOS[F.tipo] || "Fichaje")}</span> <span class="who">${esc(SP(p).nombre)} · ${esc(fmtD(F.fecha))}</span></div>
       <h3>${esc(p.nombre)} ${esc(verboDe(p, F))} ${esc(F.club)}</h3>
       <div class="facts"><span>${isConf(p) ? `<span class="vok">✓ Confirmado por el club</span>` : `<span class="vpend">Pendiente de confirmación del club</span>`}</span><span>${esc(posName(p))}</span></div>
@@ -1505,14 +1521,15 @@ function renderClubs(){
   const list = S.clubs.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
   cnt.textContent = `${list.length} club${list.length === 1 ? "" : "es"}`;
   g.innerHTML = list.length ? `<div class="clubgrid">${list.map(c => {
-    const members = plantelOf(c).filter(x => isMember(c, playerById(x.p))).length;
-    return `<button type="button" class="ccard" data-club="${esc(c._id)}">${crestHTML(c)}<div style="min-width:0"><div class="cn">${esc(c.nombre)}</div><div class="cm">${esc([SPORTS[c.deporte] ? SPORTS[c.deporte].nombre : "", clubPlace(c)].filter(Boolean).join(" · "))}</div><div class="cm">${members} en el plantel · ${postsOf(c).length} publicaciones</div></div></button>`;
+    const members = c._lite ? (c._nPl || 0) : plantelOf(c).filter(x => isMember(c, playerById(x.p))).length;
+    return `<button type="button" class="ccard" data-club="${esc(c._id)}">${crestHTML(c)}<div style="min-width:0"><div class="cn">${esc(c.nombre)}</div><div class="cm">${esc([SPORTS[c.deporte] ? SPORTS[c.deporte].nombre : "", clubPlace(c)].filter(Boolean).join(" · "))}</div><div class="cm">${members} en el plantel · ${c._lite ? (c._nPosts || 0) : postsOf(c).length} publicaciones</div></div></button>`;
   }).join("")}</div>` : `<div class="empty"><h2>Todavía no hay clubes</h2><p>Los clubes crean su cuenta desde Mi cuenta, publican pruebas e inicios de temporada y arman su plantel.</p><a class="btn primary" href="#mi-ficha" data-role="club">Crear cuenta de club</a></div>`;
 }
 $("#clubgrid").addEventListener("click", e => { const b = e.target.closest("[data-club]"); if (!b) return; const c = S.clubs.find(x => x._id === b.dataset.club); if (c) openClub(c); });
 
 function openClub(c){
   if (!ME) return openGate(c, "club");
+  if (c._lite) return hydrateOpen(c, "club");
   const d = $("#detail"), ct = c.contacto || {};
   const members = plantelOf(c).map(x => playerById(x.p)).filter(p => p && isMember(c, p));
   const posts = postsOf(c).slice().sort((a,b) => (+b.creado||0) - (+a.creado||0));
@@ -1869,7 +1886,7 @@ function rebuildOpinsClaude(){
   }
   S.opins = m;
 }
-function opinionStats(id){ const os = S.opins.get(id) || []; if (!os.length) return null; return {avg: os.reduce((a,o) => a + o.estrellas, 0) / os.length, n: os.length}; }
+function opinionStatsClaude(id){ const os = S.opins.get(id) || []; if (!os.length) return null; return {avg: os.reduce((a,o) => a + o.estrellas, 0) / os.length, n: os.length}; }
 function opinionsHTML(p){
   const os = (S.opins.get(p._id) || []).slice().sort((a,b) => b.fecha - a.fecha);
   const me = ME ? playerById(ME) : null, mine = os.find(o => o.by === ME);
@@ -1939,7 +1956,7 @@ function coachCardHTML(p, asButton = true){
       ${isDT(p) && p.carnetVigente ? `<div class="status ${vigenteOK(p) ? "st-libre" : "st-prueba"}">${vigenteOK(p) ? "Carnet vigente" : "Carnet vencido"}</div>` : ""}
       <div class="specs coach">
         <div><span>Edad</span><b>${a ?? "–"}</b></div>
-        ${isProfe(p) ? `<div><span>Título</span><b>${esc(TIT_SHORT[p.licencia] || "–")}</b></div><div><span>Temporadas</span><b>${seasonsOf(p).length}</b></div>`
+        ${isProfe(p) ? `<div><span>Título</span><b>${esc(TIT_SHORT[p.licencia] || "–")}</b></div><div><span>Temporadas</span><b>${p._lite ? (p._tempN || 0) : seasonsOf(p).length}</b></div>`
           : `<div><span>Licencia</span><b>${esc(LIC_SHORT[p.licencia] || "–")}</b></div><div><span>Habilitado</span><b>${esc(HAB_SHORT[p.habilitado] || "–")}</b></div>`}
       </div>
     </div></${tag}>`;
@@ -1966,6 +1983,7 @@ function licBlockHTML(p){
 }
 function openCoach(p){
   if (!ME) return openGate(p, "p");
+  if (p._lite) return hydrateOpen(p, "p");
   const d = $("#detail"), a = age(p.fechaNac), sp = SP(p), pr = isProfe(p);
   const traj = (Array.isArray(p.trayectoria) ? p.trayectoria : []).filter(t => t && t.club);
   const vids = (Array.isArray(p.videos) ? p.videos : []).slice(0, MAX_VIDEOS);
@@ -1990,7 +2008,7 @@ function openCoach(p){
         ${(() => { const cs = S.clubs.filter(cl => isMember(cl, p)); return cs.length ? `<div class="badges">${cs.map(cl => `<span>✓ Cuerpo técnico de ${esc(cl.nombre)}</span>`).join("")}</div>` : ""; })()}
         <div class="kv">
           <div><span>Edad</span><b>${a ?? "–"}</b></div>
-          ${pr ? `<div><span>Título</span><b>${esc(TIT_SHORT[p.licencia] || "–")}</b></div><div><span>Temporadas</span><b>${seasonsOf(p).length}</b></div>`
+          ${pr ? `<div><span>Título</span><b>${esc(TIT_SHORT[p.licencia] || "–")}</b></div><div><span>Temporadas</span><b>${p._lite ? (p._tempN || 0) : seasonsOf(p).length}</b></div>`
             : `<div><span>Licencia</span><b>${esc(LIC_SHORT[p.licencia] || "–")}</b></div><div><span>Habilitado</span><b>${esc(HAB_SHORT[p.habilitado] || "–")}</b></div>`}
           <div><span>${pr ? "Especialidad" : "Sistema"}</span><b>${esc(p.sistema || "–")}</b></div>
           <div><span>Club actual</span><b>${esc(p.clubActual || "Sin club")}</b></div>
@@ -2064,7 +2082,7 @@ function renderCoaches(){
     return;
   }
   cnt.textContent = `${list.length} de ${all.length} entrenador${all.length === 1 ? "" : "es"}`;
-  g.innerHTML = list.length ? `<div class="grid">${list.map(p => coachCardHTML(p)).join("")}</div>`
+  g.innerHTML = list.length ? `<div class="grid">${pageOf(g.id, list).map(p => coachCardHTML(p)).join("")}</div>${moreBtn(g.id, list)}`
     : `<div class="empty"><h2>Sin resultados</h2><p>Ningún entrenador coincide con esos filtros. Probá con otra licencia o categoría.</p></div>`;
 }
 
@@ -2097,7 +2115,7 @@ function renderProfes(){
     return;
   }
   cnt.textContent = `${list.length} de ${all.length} profe${all.length === 1 ? "" : "s"}`;
-  g.innerHTML = list.length ? `<div class="grid">${list.map(p => coachCardHTML(p)).join("")}</div>`
+  g.innerHTML = list.length ? `<div class="grid">${pageOf(g.id, list).map(p => coachCardHTML(p)).join("")}</div>${moreBtn(g.id, list)}`
     : `<div class="empty"><h2>Sin resultados</h2><p>Ningún profe coincide con esos filtros.</p></div>`;
 }
 
@@ -2152,6 +2170,7 @@ function renderCoachForm(){
         </div>
         <div class="row">
           <label class="fld"><span class="lbl">Fecha de nacimiento</span><input type="date" id="i-fnac" data-k="fechaNac" value="${esc(D.fechaNac)}"></label>
+          ${tutorHTML(D)}
           <label class="fld"><span class="lbl">Nacionalidad</span><select id="i-nac" data-k="nacionalidad">${countryOpts(D.nacionalidad, "Elegí…")}</select></label>
           <label class="fld"><span class="lbl">Segunda nacionalidad</span><select id="i-nac2" data-k="nacionalidad2">${countryOpts(D.nacionalidad2, "No tengo")}</select></label>
         </div>
@@ -2301,68 +2320,128 @@ const iso = () => new Date().toISOString();
 const ms = v => Date.parse(v) || 0;
 const nil = v => (v === "" || v == null) ? null : v;
 
-/* ---------- carga de datos ---------- */
-async function loadAll(){
-  const [jug, clu, pubs, pl, temps, fich, refs, ops] = await Promise.all([
-    api("jugadores?select=*&order=actualizado.desc&limit=2000"),
-    api("clubes?select=*&limit=1000"),
-    api("publicaciones?select=*&order=creado.desc&limit=3000"),
-    api("plantel?select=*&limit=10000"),
-    api("temporadas?select=*&limit=20000"),
-    api("fichajes?select=*&limit=3000"),
-    api("referencias?select=*&limit=10000"),
-    api("opiniones?select=*&limit=10000")
-  ]);
-  let ped = [], priv = null, cuenta = null;
-  if (ME){
-    const [a, b, c] = await Promise.all([
-      api("pedidos_referencia?select=*&jugador_id=" + eq(ME)),
-      api("privado?select=datos&id=" + eq(ME)),
-      api("cuentas?select=tipo&id=" + eq(ME))
-    ]);
-    ped = a || []; priv = (b || [])[0] || null; cuenta = (c || [])[0] || null;
-  }
-  const by = (arr, k) => { const m = new Map(); for (const x of arr || []) { const a = m.get(x[k]) || []; a.push(x); m.set(x[k], a); } return m; };
-  const plByJ = by(pl, "jugador_id"), tByP = by(temps, "persona_id"), fichBy = new Map((fich || []).map(f => [f.jugador_id, f]));
-  S.players = (jug || []).map(r => {
-    const d = Object.assign({}, r.datos || {}), rows = plByJ.get(r.id) || [];
-    const p = Object.assign(d, {
-      _id: r.id, perfil: r.perfil || "jugador", deporte: r.deporte || "futbol", publicado: r.publicado !== false,
-      licencia: r.licencia || "", habilitado: r.habilitado || "", carnetVigente: !!r.carnet_vigente,
-      vigencia: r.carnet_vence ? String(r.carnet_vence).slice(0, 7) : "", actualizado: ms(r.actualizado),
-      clubes: rows.filter(x => x.estado === "aceptado").map(x => x.club_id),
-      exclubes: rows.filter(x => x.estado === "ex").map(x => x.club_id),
-      rechazados: rows.filter(x => x.estado === "rechazado").map(x => x.club_id),
-      temporadas: (tByP.get(r.id) || []).map(t => ({anio: t.anio, club: t.club, categoria: t.categoria || "", rol: t.rol || "",
-        s1: t.s1 ?? "", s2: t.s2 ?? "", s3: t.s3 ?? "", s4: t.s4 ?? "", resultado: t.resultado || "", comentario: t.comentario || ""}))
-        .sort((a, b) => String(b.anio).localeCompare(String(a.anio)))
+/* ---------- carga de datos ----------
+   Liviana: la lista trae solo las tarjetas (vista "tarjetas"), los clubes (vista "clubes_pub")
+   y las últimas publicaciones. La ficha completa se pide recién al abrirla (hydrate).
+   Lo propio del usuario (su ficha, su club, sus avisos) se trae al ingresar. */
+const PAGE = 24;
+const C = {lite: [], clubsPub: [], full: new Map(), clubFull: new Map(), pubs: new Map(), pl: new Map(), ops: new Map(), refs: new Map(), fich: new Map(), ped: [], priv: null, cuenta: null};
+S.more = {}; S.byId = new Map();
+const plKey = r => r.club_id + "|" + r.jugador_id, opKey = r => r.autor_id + "|" + r.staff_id;
+function setScope(map, keyFn, test, rows){ for (const [k, v] of map) if (test(v)) map.delete(k); for (const r of rows || []) map.set(keyFn(r), r); }
+const sumOf = (n, avg) => n > 0 && avg != null ? {avg: +avg, n: +n} : null;
+
+function playerFrom(id, datos, cols, extra){
+  const p = Object.assign({}, datos || {}, {
+    _id: id, perfil: cols.perfil || "jugador", deporte: cols.deporte || "futbol", publicado: cols.publicado !== false,
+    licencia: cols.licencia || "", habilitado: cols.habilitado || "", carnetVigente: !!cols.carnet_vigente,
+    vigencia: cols.carnet_vence ? String(cols.carnet_vence).slice(0, 7) : "", actualizado: ms(cols.actualizado)
+  }, extra || {});
+  if (!p.lado && p.pie) p.lado = p.pie;
+  return p;
+}
+const fichFromRow = f => f ? {club: f.club, fecha: f.fecha, tipo: f.tipo, h: f.token_hash, anunciado: ms(f.anunciado), conf: f.confirmado_por || "", conf_en: f.confirmado_en, conf_by: f.confirmado_autor} : null;
+const seasonFromRow = t => ({anio: t.anio, club: t.club, categoria: t.categoria || "", rol: t.rol || "", s1: t.s1 ?? "", s2: t.s2 ?? "", s3: t.s3 ?? "", s4: t.s4 ?? "", resultado: t.resultado || "", comentario: t.comentario || ""});
+
+/* arma S.players, S.clubs, S.refs, S.opins… a partir de lo que ya se trajo */
+function assemble(){
+  const pls = [...C.pl.values()], byJ = new Map(), byC = new Map();
+  for (const r of pls){ (byJ.get(r.jugador_id) || byJ.set(r.jugador_id, []).get(r.jugador_id)).push(r); (byC.get(r.club_id) || byC.set(r.club_id, []).get(r.club_id)).push(r); }
+  const memb = id => { const rows = byJ.get(id) || []; return {
+    clubes: rows.filter(x => x.estado === "aceptado").map(x => x.club_id),
+    exclubes: rows.filter(x => x.estado === "ex").map(x => x.club_id),
+    rechazados: rows.filter(x => x.estado === "rechazado").map(x => x.club_id)}; };
+  const players = [], seen = new Set();
+  for (const t of C.lite){
+    const F = C.full.get(t.id);
+    const fich = F ? fichFromRow(F.fich) : (t.fichaje ? {club: t.fichaje.club, fecha: t.fichaje.fecha, tipo: t.fichaje.tipo, h: t.fichaje.h, anunciado: ms(t.fichaje.anunciado), conf: t.fichaje.conf || "", conf_en: t.fichaje.conf_en, conf_by: t.fichaje.conf_by} : null);
+    const extra = Object.assign(memb(t.id), {
+      _lite: !F, _tempN: t.temp_n || 0,
+      _sum: {ref: sumOf(t.ref_n, t.ref_avg), op: sumOf(t.op_n, t.op_avg)}
     });
-    if (!p.lado && p.pie) p.lado = p.pie;
-    const f = fichBy.get(r.id);
-    if (f) p.fichaje = {club: f.club, fecha: f.fecha, tipo: f.tipo, h: f.token_hash, anunciado: ms(f.anunciado)};
-    return p;
+    if (F) extra.temporadas = F.temps.map(seasonFromRow).sort((a, b) => String(b.anio).localeCompare(String(a.anio)));
+    const p = playerFrom(t.id, F ? F.row.datos : t.datos, F ? F.row : Object.assign({publicado: true}, t), extra);
+    if (fich) p.fichaje = fich;
+    players.push(p); seen.add(t.id);
+  }
+  for (const [id, F] of C.full){            // fichas propias ocultas (no están en las tarjetas)
+    if (seen.has(id)) continue;
+    const p = playerFrom(id, F.row.datos, F.row, Object.assign(memb(id), {_lite: false, _tempN: F.temps.length, _sum: {ref: null, op: null},
+      temporadas: F.temps.map(seasonFromRow).sort((a, b) => String(b.anio).localeCompare(String(a.anio)))}));
+    const fi = fichFromRow(F.fich); if (fi) p.fichaje = fi;
+    players.push(p);
+  }
+  S.players = players;
+  S.byId = new Map(players.map(p => [p._id, p]));
+  const pubsBy = new Map(); for (const x of C.pubs.values()) (pubsBy.get(x.club_id) || pubsBy.set(x.club_id, []).get(x.club_id)).push(x);
+  const clubs = [], cseen = new Set();
+  const clubObj = (id, nombre, deporte, datos, actualizado, lite, nPl, nPosts) => Object.assign({}, datos || {}, {
+    _id: id, nombre, deporte: deporte || "futbol", actualizado: ms(actualizado), _lite: lite, _nPl: nPl, _nPosts: nPosts,
+    posts: (pubsBy.get(id) || []).map(x => ({id: x.id, tipo: x.tipo, titulo: x.titulo, texto: x.texto, fechaEvento: x.fecha_evento || "", hora: x.hora || "", lugar: x.lugar || "", creado: ms(x.creado)})),
+    plantel: (byC.get(id) || []).map(x => ({p: x.jugador_id, desde: ms(x.desde)}))
   });
-  const pubBy = by(pubs, "club_id"), plByC = by(pl, "club_id");
-  S.clubs = (clu || []).filter(c => c.nombre && c.nombre.trim()).map(c => Object.assign({}, c.datos || {}, {
-    _id: c.id, nombre: c.nombre, deporte: c.deporte || "futbol", actualizado: ms(c.actualizado),
-    posts: (pubBy.get(c.id) || []).map(x => ({id: x.id, tipo: x.tipo, titulo: x.titulo, texto: x.texto, fechaEvento: x.fecha_evento || "", hora: x.hora || "", lugar: x.lugar || "", creado: ms(x.creado)})),
-    plantel: (plByC.get(c.id) || []).map(x => ({p: x.jugador_id, desde: ms(x.desde)}))
-  }));
-  const refMap = new Map();
-  for (const r of refs || []){ const a = refMap.get(r.jugador_id) || []; a.push({club: r.club, estrellas: r.estrellas, texto: r.texto, firma: r.firma, fecha: ms(r.creado)}); refMap.set(r.jugador_id, a); }
-  S.refs = refMap;
-  S.confByHash = new Map((fich || []).filter(f => f.confirmado_por).map(f => [f.token_hash, {quien: f.confirmado_por, fecha: ms(f.confirmado_en), by: f.confirmado_autor}]));
-  S.usedByHash = new Map(ped.filter(x => x.usado_por).map(x => [x.token_hash, x.usado_por]));
+  for (const c of C.clubsPub){
+    const F = C.clubFull.get(c.id);
+    clubs.push(F ? clubObj(c.id, F.row.nombre, F.row.deporte, F.row.datos, F.row.actualizado, false, c.n_plantel, c.n_posts)
+                 : clubObj(c.id, c.nombre, c.deporte, c.datos, c.actualizado, true, c.n_plantel, c.n_posts));
+    cseen.add(c.id);
+  }
+  for (const [id, F] of C.clubFull) if (!cseen.has(id) && F.row.nombre && F.row.nombre.trim()) clubs.push(clubObj(id, F.row.nombre, F.row.deporte, F.row.datos, F.row.actualizado, false, 0, 0));
+  S.clubs = clubs;
+  S.refs = new Map([...C.refs].map(([id, rows]) => [id, rows.map(r => ({club: r.club, estrellas: r.estrellas, texto: r.texto, firma: r.firma, fecha: ms(r.creado)}))]));
+  S.confByHash = new Map(players.filter(p => p.fichaje && p.fichaje.conf).map(p => [p.fichaje.h, {quien: p.fichaje.conf, fecha: ms(p.fichaje.conf_en), by: p.fichaje.conf_by}]));
   const clubName = id => (S.clubs.find(c => c._id === id) || {}).nombre || "su club";
-  const opMap = new Map();
-  for (const o of ops || []){ const a = opMap.get(o.staff_id) || []; a.push({by: o.autor_id, nombre: (playerById(o.autor_id) || {}).nombre || "Un jugador", estrellas: o.estrellas, texto: o.texto, fecha: ms(o.creado), club: clubName(o.club_id)}); opMap.set(o.staff_id, a); }
+  const opMap = new Map(), ops = [...C.ops.values()];
+  for (const o of ops){ if (!C.full.has(o.staff_id) && o.staff_id !== ME) continue; const a = opMap.get(o.staff_id) || []; a.push({by: o.autor_id, nombre: (playerById(o.autor_id) || {}).nombre || "Un jugador", estrellas: o.estrellas, texto: o.texto, fecha: ms(o.creado), club: clubName(o.club_id)}); opMap.set(o.staff_id, a); }
   S.opins = opMap;
-  RAW.fich = fichBy; RAW.pubs = pubs || []; RAW.plantel = pl || []; RAW.pedidos = ped; RAW.ops = ops || [];
-  const myOps = {}; for (const o of RAW.ops) if (o.autor_id === ME) myOps[o.staff_id] = {estrellas: o.estrellas, texto: o.texto, fecha: ms(o.creado), club: o.club_id};
+  RAW.fich = new Map(players.filter(p => p.fichaje).map(p => [p._id, {token_hash: p.fichaje.h}]));
+  RAW.pubs = [...C.pubs.values()]; RAW.plantel = pls; RAW.pedidos = C.ped; RAW.ops = ops;
+  const myOps = {}; for (const o of ops) if (o.autor_id === ME) myOps[o.staff_id] = {estrellas: o.estrellas, texto: o.texto, fecha: ms(o.creado), club: o.club_id};
   S.reviewDocs = ME ? [{id: ME, opina: myOps}] : [];
+}
+
+/* lo propio del usuario con sesión */
+async function loadMine(){
+  const q = "=" + eq(ME);
+  const [jug, temps, fich, refs, opsS, opsA, plJ, plC, ped, priv, cuenta, club, myPubs] = await Promise.all([
+    api("jugadores?select=*&id" + q), api("temporadas?select=*&persona_id" + q), api("fichajes?select=*&jugador_id" + q),
+    api("referencias?select=*&jugador_id" + q), api("opiniones?select=*&staff_id" + q), api("opiniones?select=*&autor_id" + q),
+    api("plantel?select=*&jugador_id" + q), api("plantel?select=*&club_id" + q),
+    api("pedidos_referencia?select=*&jugador_id" + q), api("privado?select=datos&id" + q), api("cuentas?select=tipo&id" + q),
+    api("clubes?select=*&id" + q), api("publicaciones?select=*&club_id" + q + "&order=creado.desc")
+  ]);
+  if (jug && jug[0]) C.full.set(ME, {row: jug[0], temps: temps || [], fich: (fich || [])[0] || null, t: Date.now()}); else C.full.delete(ME);
+  C.refs.set(ME, refs || []);
+  setScope(C.ops, opKey, o => o.staff_id === ME || o.autor_id === ME, (opsS || []).concat(opsA || []));
+  setScope(C.pl, plKey, r => r.jugador_id === ME || r.club_id === ME, (plJ || []).concat(plC || []));
+  if (club && club[0]) C.clubFull.set(ME, {row: club[0], t: Date.now()}); else C.clubFull.delete(ME);
+  for (const x of myPubs || []) C.pubs.set(x.id, x);
+  for (const [k, x] of C.pubs) if (x.club_id === ME && !(myPubs || []).some(y => y.id === k)) C.pubs.delete(k);
+  // novedades de los clubes donde juega (para los avisos)
+  const mis = (plJ || []).filter(r => r.estado === "aceptado").map(r => r.club_id);
+  if (mis.length){ const pp = await api("publicaciones?select=*&club_id=in.(" + mis.map(encodeURIComponent).join(",") + ")&order=creado.desc&limit=60"); for (const x of pp || []) C.pubs.set(x.id, x); }
+  C.ped = ped || []; C.priv = (priv || [])[0] || null; C.cuenta = (cuenta || [])[0] || null;
+}
+
+async function loadAll(){
+  const [tar, clu, pubs] = await Promise.all([
+    api("tarjetas?select=*&order=actualizado.desc&limit=5000"),
+    api("clubes_pub?select=*&limit=2000"),
+    api("publicaciones?select=*&order=creado.desc&limit=60")
+  ]);
+  const prevLite = new Map(C.lite.map(t => [t.id, t.actualizado]));
+  C.lite = tar || []; C.clubsPub = clu || [];
+  // fichas abiertas antes: si cambiaron, se vuelven a pedir al abrirlas
+  for (const t of C.lite) if (t.id !== ME && C.full.has(t.id) && prevLite.get(t.id) !== t.actualizado) C.full.delete(t.id);
+  for (const x of pubs || []) C.pubs.set(x.id, x);
+  if (ME) await loadMine();
+  else { C.full.clear(); C.clubFull.clear(); C.pl.clear(); C.ops.clear(); C.refs.clear(); C.ped = []; C.priv = null; C.cuenta = null; }
+  assemble();
+  const ped = C.ped, cuenta = C.cuenta, priv = C.priv;
+  S.usedByHash = new Map(ped.filter(x => x.usado_por).map(x => [x.token_hash, x.usado_por]));
   const mine = ME ? S.players.find(p => p._id === ME) : null;
   S.myDoc = mine ? JSON.parse(JSON.stringify(mine)) : null;
-  if (S.myDoc){ delete S.myDoc._id; S.myDoc.inv = ped.map(x => ({h: x.token_hash, club: x.club, por: x.usado_por || ""})); }
+  if (S.myDoc){ for (const k of ["_id", "_lite", "_tempN", "_sum"]) delete S.myDoc[k]; S.myDoc.inv = ped.map(x => ({h: x.token_hash, club: x.club, por: x.usado_por || ""})); }
   S.myClub = ME ? (S.clubs.find(c => c._id === ME) || null) : null;
   S.account = cuenta ? cuenta.tipo : null;
   if (S.account && S.account !== "club" && !S.myDoc) S.role = S.account;
@@ -2375,6 +2454,69 @@ async function loadAll(){
   S.loadError = null; S.lastLoad = Date.now();
 }
 async function reload(){ try { await loadAll(); } catch(e){ S.loadError = e; } refreshAll(); }
+
+/* ficha completa: se pide al abrirla */
+async function hydratePlayer(id){
+  const q = "=" + eq(id);
+  const [jug, temps, fich, refs, ops, pl] = await Promise.all([
+    api("jugadores?select=*&id" + q), api("temporadas?select=*&persona_id" + q), api("fichajes?select=*&jugador_id" + q),
+    api("referencias?select=*&jugador_id" + q), api("opiniones?select=*&staff_id" + q), api("plantel?select=*&jugador_id" + q)
+  ]);
+  if (!jug || !jug[0]) throw {message: "not found"};
+  C.full.set(id, {row: jug[0], temps: temps || [], fich: (fich || [])[0] || null, t: Date.now()});
+  C.refs.set(id, refs || []);
+  setScope(C.ops, opKey, o => o.staff_id === id, ops);
+  setScope(C.pl, plKey, r => r.jugador_id === id && r.club_id !== ME, (pl || []).filter(r => r.club_id !== ME));
+  // los clubes donde estuvo: su plantel (para "compañeros de plantel")
+  const cl = [...new Set((pl || []).filter(r => r.estado === "aceptado" || r.estado === "ex").map(r => r.club_id))].filter(c => c !== ME);
+  if (cl.length){ const rows = await api("plantel?select=*&club_id=in.(" + cl.map(encodeURIComponent).join(",") + ")&limit=500"); for (const r of rows || []) C.pl.set(plKey(r), r); }
+}
+async function hydrateClub(id){
+  const q = "=" + eq(id);
+  const [club, pubs, pl] = await Promise.all([api("clubes?select=*&id" + q), api("publicaciones?select=*&club_id" + q + "&order=creado.desc&limit=" + MAX_POSTS), api("plantel?select=*&club_id" + q)]);
+  if (!club || !club[0]) throw {message: "not found"};
+  C.clubFull.set(id, {row: club[0], t: Date.now()});
+  for (const x of pubs || []) C.pubs.set(x.id, x);
+  if (id !== ME) setScope(C.pl, plKey, r => r.club_id === id, pl);
+}
+async function hydrateOpen(x, kind){
+  const d = $("#detail");
+  d.innerHTML = `<div class="npanel"><p class="loading">Cargando ${kind === "club" ? "el perfil" : "la ficha"}…</p></div>`;
+  if (!d.open) d.showModal();
+  try {
+    if (kind === "club") await hydrateClub(x._id); else await hydratePlayer(x._id);
+    assemble();
+    if (!d.open) return;
+    if (kind === "club"){ const c = S.clubs.find(y => y._id === x._id); if (c) openClub(c); }
+    else { const p = playerById(x._id); if (p) openDetail(p); }
+  } catch(e){
+    d.innerHTML = `<div class="npanel"><button class="closex" type="button" aria-label="Cerrar" style="background:var(--surface-2);color:var(--ink)">×</button><div class="empty"><h2>No se pudo abrir</h2><p>Puede que ${kind === "club" ? "el club" : "la ficha"} ya no esté publicada o que haya un problema de conexión. Probá de nuevo.</p></div></div>`;
+    d.querySelector(".closex").onclick = () => d.close();
+  }
+}
+
+/* valoraciones: con la ficha abierta se calculan con el detalle; en la lista, con el resumen de la tarjeta */
+function ratingOf(pid){
+  const rs = S.refs.get(pid);
+  if (rs) return rs.length ? {avg: rs.reduce((a, r) => a + r.estrellas, 0) / rs.length, n: rs.length} : null;
+  const p = playerById(pid); return (p && p._sum && p._sum.ref) || null;
+}
+function opinionStats(id){
+  if (C.full.has(id)){ const os = S.opins.get(id) || []; return os.length ? {avg: os.reduce((a, o) => a + o.estrellas, 0) / os.length, n: os.length} : null; }
+  const p = playerById(id); return (p && p._sum && p._sum.op) || null;
+}
+
+/* "Ver más": de a 24 tarjetas (menos datos y menos fotos por visita) */
+function pageOf(key, list){ return list.slice(0, S.more[key] || PAGE); }
+function moreBtn(key, list){ const rest = list.length - (S.more[key] || PAGE); return rest > 0 ? `<div class="morewrap"><button type="button" class="btn" data-more="${esc(key)}">Ver más (${rest})</button></div>` : ""; }
+document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; S.more[b.dataset.more] = (S.more[b.dataset.more] || PAGE) + PAGE; refreshAll(); });
+document.addEventListener("input", e => { if (!e.target.closest("#view-mi-ficha")) S.more = {}; }, true);
+
+/* fotos: miniatura liviana para tarjetas y novedades; si no existe, se usa la foto grande */
+const thumbPath = id => id.replace(/\.[A-Za-z0-9]+$/, "") + "_t.jpg";
+const blobThumb = id => assetId(id) ? SBU + "/storage/v1/object/public/fotos/" + thumbPath(id) : "";
+window.faImgErr = img => { const f = img.dataset.full; if (f && img.src !== f){ img.dataset.full = ""; img.src = f; } else img.remove(); };
+const thumbImg = (id, alt) => `<img src="${esc(blobThumb(id))}" data-full="${esc(blobSrc(id))}" alt="${esc(alt || "")}" loading="lazy" onerror="faImgErr(this)">`;
 
 /* ---------- reemplazos de las funciones de datos ---------- */
 async function savePriv(patch){
@@ -2402,6 +2544,9 @@ async function savePlayer(d){
   S.saving = true;
   try {
     const perfil = d.perfil || "jugador";
+    const tutor = S.draft && "autorizaTutor" in S.draft ? !!S.draft.autorizaTutor : !!(d.autorizaTutor || (S.myDoc && S.myDoc.autorizaTutor));
+    const edad = age(d.fechaNac);
+    if (edad !== null && edad < 18 && !tutor) throw {userMsg: "Sos menor de 18: para guardar la ficha marcá que tu padre, madre o tutor la autoriza (abajo de la fecha de nacimiento)."};
     await ensureCuenta(perfil);
     const {temporadas, fichaje, clubes, exclubes, rechazados, inv, _id, actualizado, deporte, publicado, licencia, habilitado, carnetVigente, ...rest} = d;
     const vig = /^\d{4}-\d{2}$/.test(d.vigencia || "") ? d.vigencia : "";
@@ -2412,7 +2557,7 @@ async function savePlayer(d){
     await api("jugadores?on_conflict=id", {method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: {
       id: ME, perfil, deporte: deporte || "futbol", publicado: publicado !== false,
       licencia: nil(licencia), habilitado: nil(habilitado), carnet_vigente: !!carnetVigente, carnet_vence: vig ? vig + "-01" : null,
-      datos: rest, actualizado: iso()
+      datos: Object.assign(rest, {autorizaTutor: tutor}), actualizado: iso()
     }});
     await api("temporadas?persona_id=" + eq(ME), {method: "DELETE"});
     if (seasons.length) await api("temporadas", {method: "POST", prefer: "return=minimal", body: seasons.slice(0, 30).map(t => ({
@@ -2494,6 +2639,16 @@ const sbdb = {
     };
   }
 };
+async function makeThumb(blob){
+  const bmp = await createImageBitmap(blob), sc = Math.min(1, 360 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise(r => c.toBlob(b => r(b), "image/jpeg", 0.72));
+}
+async function putFoto(path, blob, type){
+  await refreshIfNeeded();
+  return fetch(SBU + "/storage/v1/object/fotos/" + path, {method: "POST", headers: {apikey: SBK, authorization: "Bearer " + session.access_token, "content-type": type, "x-upsert": "true", "cache-control": "max-age=31536000"}, body: blob});
+}
 const sbAssets = {
   async upload(blob, opts){
     const type = (opts && opts.type) || blob.type || "image/jpeg";
@@ -2501,9 +2656,9 @@ const sbAssets = {
     if (blob.size > 2 * 1024 * 1024) throw {code: "too_large"};
     const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
     const path = ME + "/" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + "." + ext;
-    await refreshIfNeeded();
-    const r = await fetch(SBU + "/storage/v1/object/fotos/" + path, {method: "POST", headers: {apikey: SBK, authorization: "Bearer " + session.access_token, "content-type": type, "x-upsert": "true"}, body: blob});
+    const r = await putFoto(path, blob, type);
     if (!r.ok) throw {code: r.status === 413 ? "too_large" : r.status === 415 ? "unsupported_type" : "upstream_error"};
+    try { const t = await makeThumb(blob); if (t) await putFoto(thumbPath(path), t, "image/jpeg"); } catch {}
     return {id: path, url: blobSrc(path)};
   }
 };
@@ -2572,7 +2727,9 @@ function authHTML(){
       <form id="auth-form" novalidate>
         <label class="fld" style="margin-bottom:12px"><span class="lbl">Correo</span><input type="email" id="au-mail" autocomplete="email" maxlength="120" value="${esc(S.authEmail || "")}"></label>
         <label class="fld" style="margin-bottom:12px"><span class="lbl">Contraseña${reg ? " (mínimo 6 caracteres)" : ""}</span><input type="password" id="au-pass" autocomplete="${reg ? "new-password" : "current-password"}" maxlength="72"></label>
-        ${reg ? `<label class="fld" style="margin-bottom:12px"><span class="lbl">Repetí la contraseña</span><input type="password" id="au-pass2" autocomplete="new-password" maxlength="72"></label>` : ""}
+        ${reg ? `<label class="fld" style="margin-bottom:12px"><span class="lbl">Repetí la contraseña</span><input type="password" id="au-pass2" autocomplete="new-password" maxlength="72"></label>
+        <label class="chk legalchk"><input type="checkbox" id="au-terms"><span>Leí y acepto los <a href="#terminos" target="_blank" rel="noopener">términos y la política de privacidad</a>.</span></label>
+        <label class="chk legalchk"><input type="checkbox" id="au-edad"><span>Tengo 18 años o más, o tengo la autorización de mi padre, madre o tutor.</span></label>` : ""}
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button type="submit" class="btn primary" id="au-send">${reg ? "Crear cuenta" : "Ingresar"}</button>
           ${reg ? "" : `<button type="button" class="btn sm" id="au-forgot">Olvidé mi contraseña</button>`}
@@ -2651,10 +2808,12 @@ document.addEventListener("submit", async e => {
     if (!/^\S+@\S+\.\S+$/.test(mail)){ out.textContent = "Revisá que el correo esté bien escrito."; $("#au-mail").focus(); return; }
     if (pass.length < 6){ out.textContent = "La contraseña tiene que tener al menos 6 caracteres."; $("#au-pass").focus(); return; }
     if (reg && pass !== $("#au-pass2").value){ out.textContent = "Las contraseñas no coinciden."; $("#au-pass2").focus(); return; }
+    if (reg && !$("#au-terms").checked){ out.textContent = "Para crear la cuenta tenés que aceptar los términos y la política de privacidad."; return; }
+    if (reg && !$("#au-edad").checked){ out.textContent = "Si sos menor de 18, necesitás la autorización de tu padre, madre o tutor. Marcá la casilla cuando la tengas."; return; }
     b.disabled = true; out.textContent = reg ? "Creando tu cuenta…" : "Ingresando…";
     try {
       if (reg){
-        const r = await authFetch("/signup?redirect_to=" + authRedirect(), {email: mail, password: pass});
+        const r = await authFetch("/signup?redirect_to=" + authRedirect(), {email: mail, password: pass, data: {terminos: TERMINOS_VERSION, mayor_o_autorizado: true}});
         if (r && r.access_token){ saveSession(sessFromToken(r)); S.authNote = ""; await afterLogin(); return; }
         S.authNote = "sent:" + mail; S.authMode = "login"; renderMine(); return;
       }
@@ -2683,6 +2842,96 @@ function loginNeededHTML(title, txt){
   return `<div class="empty"><h2>${esc(title)}</h2><p>${esc(txt)}</p><a class="btn primary" href="#mi-ficha" data-back="${esc(location.hash)}">Ingresar o crear cuenta</a></div>`;
 }
 
+/* ---------- términos, privacidad y menores ---------- */
+const CONTACTO_MAIL = window.FA_CONTACTO || "";
+const TERMINOS_VERSION = "2026-10-30";
+function route(){
+  const t = location.hash === "#terminos", sec = $("#view-terminos");
+  if (sec) sec.hidden = !t;
+  if (t){
+    document.querySelectorAll("main section[id^='view-']").forEach(x => { if (x.id !== "view-terminos") x.hidden = true; });
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", "false"));
+    scrollTo(0, 0); return;
+  }
+  routeBase();
+}
+const contactoTxt = () => CONTACTO_MAIL ? `escribinos a <a href="mailto:${esc(CONTACTO_MAIL)}">${esc(CONTACTO_MAIL)}</a>` : "escribinos por los canales de contacto de Fichaje Abierto";
+function footerHTML(){
+  return `<footer class="sitefoot"><div class="wrap"><span>Fichaje Abierto · La vitrina del deporte</span><a href="#terminos">Términos y privacidad</a></div></footer>`;
+}
+function termsSectionHTML(){
+  return `<section id="view-terminos" hidden aria-labelledby="terminos-title"><div class="legal">
+  <h1 id="terminos-title">Términos y privacidad</h1>
+  <p class="upd">Última actualización: 30 de octubre de 2026.</p>
+
+  <h2>1. Qué es Fichaje Abierto</h2>
+  <p>Fichaje Abierto es una vitrina gratuita donde jugadores, entrenadores y preparadores físicos publican su ficha deportiva, y donde los clubes publican novedades y buscan refuerzos. No somos agentes, representantes ni intermediarios: no participamos de los acuerdos entre jugadores y clubes, no cobramos comisiones y no garantizamos que alguien sea contratado.</p>
+
+  <h2>2. Tu cuenta</h2>
+  <ul>
+    <li>Necesitás un correo válido y validarlo para cargar una ficha o la cuenta de un club.</li>
+    <li>Cada cuenta es de una sola persona o de un solo club. El tipo de cuenta (jugador, entrenador, profe o club) no se puede cambiar.</li>
+    <li>Cuidá tu contraseña. Lo que se haga con tu cuenta es tu responsabilidad.</li>
+  </ul>
+
+  <h2>3. Lo que publicás</h2>
+  <ul>
+    <li>Los datos tienen que ser verdaderos. Licencias, títulos, carnets, estadísticas y trayectorias son <b>declarados por cada usuario</b>: Fichaje Abierto no los verifica. Antes de contratar, el club debe comprobarlos.</li>
+    <li>Subí solo fotos tuyas o que tengas derecho a usar. Los videos se publican como links de YouTube y se rigen por las reglas de YouTube.</li>
+    <li>Las referencias, las opiniones y los anuncios de fichaje tienen que ser verídicos y respetuosos. Podemos quitar contenido falso, ofensivo, discriminatorio o que exponga a otras personas, y suspender cuentas que lo publiquen.</li>
+  </ul>
+
+  <h2>4. Menores de edad</h2>
+  <ul>
+    <li>Un menor de 18 años solo puede tener ficha con la <b>autorización de su padre, madre o tutor</b>, que se marca al guardarla.</li>
+    <li>En la ficha de un menor, el teléfono y el correo de contacto tienen que ser los del adulto responsable.</li>
+    <li>Si el menor tiene menos de 13 años, la ficha la crea y la maneja el adulto responsable.</li>
+    <li>Los clubes deben contactar siempre al adulto responsable, y ninguna prueba o reunión con un menor se hace sin su conocimiento.</li>
+  </ul>
+
+  <h2>5. Lo que no está permitido</h2>
+  <ul>
+    <li>Hacerse pasar por otra persona o club.</li>
+    <li>Copiar datos de las fichas en forma masiva o usarlos para otra cosa que no sea el contacto deportivo (publicidad, bases de datos, spam).</li>
+    <li>Pedir dinero a jugadores a cambio de pruebas o fichajes usando la plataforma.</li>
+  </ul>
+
+  <h2>6. Privacidad: qué datos guardamos</h2>
+  <ul>
+    <li><b>Tu cuenta:</b> correo y contraseña (la contraseña se guarda cifrada; nadie puede leerla).</li>
+    <li><b>Tu ficha o la de tu club:</b> lo que cargás vos (nombre, fecha de nacimiento, lugar, puesto, trayectoria, temporadas, foto, links de videos y el contacto que elijas mostrar).</li>
+    <li><b>En tu navegador:</b> solo lo necesario para mantener la sesión iniciada. No usamos cookies de publicidad.</li>
+  </ul>
+
+  <h2>7. Quién ve tus datos</h2>
+  <ul>
+    <li><b>Sin cuenta</b> se ve solo la tarjeta: nombre, foto, puesto, ciudad, edad, disponibilidad y valoración.</li>
+    <li><b>Con cuenta</b> se ve la ficha completa, incluido el contacto que hayas cargado.</li>
+    <li>Si ocultás o borrás tu ficha, deja de verse.</li>
+    <li>No vendemos ni alquilamos tus datos.</li>
+  </ul>
+  <p>Los datos se guardan en Supabase, un servicio de bases de datos con servidores fuera de la Argentina, que los procesa solo para que la plataforma funcione.</p>
+
+  <h2>8. Tus derechos</h2>
+  <p>Podés ver, corregir u ocultar tu ficha cuando quieras desde Mi cuenta, y borrarla con el botón “Borrar ficha”. Para borrar la cuenta completa o hacer cualquier consulta sobre tus datos, ${contactoTxt()}.</p>
+  <p>El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley N° 25.326. La Agencia de Acceso a la Información Pública, en su carácter de Órgano de Control de la Ley N° 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</p>
+
+  <h2>9. Cambios</h2>
+  <p>Si cambiamos estos términos, lo vamos a avisar en la página. Seguir usando Fichaje Abierto después del aviso implica aceptar los cambios.</p>
+  <p><a class="btn" href="#inicio">Volver al inicio</a></p>
+</div></section>`;
+}
+function tutorHTML(D){
+  const a = age(D.fechaNac), on = "autorizaTutor" in D ? !!D.autorizaTutor : !!(S.myDoc && S.myDoc.autorizaTutor);
+  return `<label class="tutorbox" id="tutorbox"${a !== null && a < 18 ? "" : " hidden"}><input type="checkbox" id="i-tutor"${on ? " checked" : ""}><span><b>Menor de 18 años:</b> mi padre, madre o tutor autoriza esta ficha, y el teléfono y el correo de contacto son los suyos.</span></label>`;
+}
+document.addEventListener("change", e => {
+  if (e.target.id === "i-tutor" && S.draft){ S.draft.autorizaTutor = e.target.checked; touch(); }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "i-fnac"){ const b = $("#tutorbox"), a = age(e.target.value); if (b) b.hidden = !(a !== null && a < 18); }
+});
+
 /* ---------- arranque ---------- */
 handleAuthFragment();
 loadSession();
@@ -2690,6 +2939,8 @@ ME = session && session.user ? session.user.id : null;
 S.db = sbdb; S.assets = ME ? sbAssets : null;
 if (/pruebas/i.test(location.hostname) || window.FA_PRUEBAS) document.body.insertAdjacentHTML("afterbegin", `<div class="testbar"><div class="wrap"><span><b>SITIO DE PRUEBAS.</b> Acá ves los cambios antes de publicarlos en el sitio oficial.</span></div></div>`);
 document.querySelector("main .wrap").insertAdjacentHTML("afterbegin", `<div id="loaderr"></div>`);
+document.querySelector("main .wrap").insertAdjacentHTML("beforeend", termsSectionHTML());
+document.querySelector("main").insertAdjacentHTML("afterend", footerHTML());
 route();
 (async function boot(){
   await refreshIfNeeded();
@@ -2698,13 +2949,10 @@ route();
   try { await loadAll(); }
   catch(e){ S.loadError = e; S.loaded = S.clubsLoaded = S.reviewsLoaded = true; $("#loaderr").innerHTML = loadErrorHTML(); }
   route(); updateBell();
-  const fresh = () => { if (S.ready && !S.saving && Date.now() - (S.lastLoad || 0) > 15000) reload(); };
+  // sin recarga automática: datos nuevos al navegar o al volver a la pestaña, si pasaron 5 minutos
+  const fresh = () => { if (S.ready && !S.saving && Date.now() - (S.lastLoad || 0) > 300000) reload(); };
   addEventListener("hashchange", fresh);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") fresh(); });
-  setInterval(async () => {
-    if (document.visibilityState !== "visible" || S.saving) return;
-    try { await loadAll(); $("#loaderr").innerHTML = ""; refreshAll(); } catch {}
-  }, 60000);
 })();
 })();
 </script>
